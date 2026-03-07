@@ -46,13 +46,32 @@
                 <h3 style="color: var(--text-on-menu); font-size: 1.2rem; margin-bottom: 0.5rem; font-family: var(--font-main);">Быстрый заказ</h3>
                 <p style="font-size: 0.9rem; margin-bottom: 1rem;">Оставьте свой ник в Telegram или номер телефона, и мы свяжемся с вами для подтверждения заказа.</p>
 
-                <form action="/order" method="POST" style="display: flex; flex-direction: column; gap: 10px;">
-                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                <button class="btn-buy" onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}')">
+                    Добавить в корзину
+                </button>
 
-                    <input type="text" name="contact" placeholder="@username или +7 (999)..." required style="padding: 12px; border: 1px solid rgba(122, 163, 152, 0.4); border-radius: 4px; font-family: inherit; font-size: 1rem; background-color: var(--bg-main); color: var(--text-main);">
+                <script>
+                function addToCart(id, title, price, image) {
+                    // Достаем корзину из памяти или создаем пустую
+                    let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
 
-                    <button type="submit" class="btn-buy" style="margin-top: 5px;">Отправить заявку</button>
-                </form>
+                    // Ищем, есть ли уже такой товар
+                    let existingItem = cart.find(item => item.id === id);
+
+                    if (existingItem) {
+                        existingItem.quantity += 1;
+                    } else {
+                        cart.push({ id: id, title: title, price: price, image: image, quantity: 1 });
+                    }
+
+                    // Сохраняем обратно и обновляем счетчик
+                    localStorage.setItem('bureau_cart', JSON.stringify(cart));
+                    updateCartCount();
+
+                    // Маленькое визуальное подтверждение
+                    alert("Товар добавлен в корзину!");
+                }
+                </script>
             </div>
 
             <p class="shipping-note" style="margin-top: 1rem;">Изготавливается индивидуально. Отправка в течение 3-5 рабочих дней.</p>

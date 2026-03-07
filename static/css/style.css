@@ -16,10 +16,10 @@
 }
 
 :root {
-    --bg-menu: #FFF8ED;
-    --text-on-menu: #BD6A9D;
-    --bg-main: #FFF8ED;
-    --text-main: #7AA398;
+    --bg-menu: #F3D9B1;
+    --text-on-menu: #C33149;
+    --bg-main: #F3D9B1;
+    --text-main: #A8C256;
     --font-heading: 'HeadingFont', sans-serif;
     --font-main: 'TextFont', sans-serif;
 }

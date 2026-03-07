@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SeaOddity{% endblock %}</title>
-    <link rel="stylesheet" href="/static/css/style.css?v=1.1">
+    <link rel="stylesheet" href="/static/css/style.css?v=1.2">
 
     <style>
         /* Стили для новых иконок в подвале */
@@ -52,6 +52,9 @@
             <a href="/">Каталог</a>
             <a href="/info">Оплата и доставка</a>
             <a href="/contacts">Контакты</a>
+            <a href="/cart" style="font-weight: bold; color: var(--text-on-menu);">
+                Корзина <span id="cart-count">(0)</span>
+            </a>
         </nav>
     </header>
     {% endblock %}
@@ -91,6 +94,18 @@
     {% endblock %}
 
     {% block scripts %}{% endblock %}
+
+    <script>
+        // Функция для обновления счетчика товаров в шапке
+        function updateCartCount() {
+            let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
+            let count = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('cart-count').innerText = `(${count})`;
+        }
+
+        // Запускаем при загрузке любой страницы
+        document.addEventListener('DOMContentLoaded', updateCartCount);
+    </script>
 
 </body>
 </html>

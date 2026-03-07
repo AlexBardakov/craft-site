@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Корзина | Бюро Кошачье{% endblock %}
+
+{% block content %}
+<main>
+    <h1 class="page-title">Ваша корзина</h1>
+    
+    <div class="content-block" id="cart-container">
+        </div>
+
+    <div class="content-block" id="order-form-container" style="display: none;">
+        <h2>Оформление заказа</h2>
+        <form action="/order" method="POST" id="order-form">
+            <input type="hidden" name="cart_data" id="cart_data_input">
+            
+            <div class="form-group">
+                <label>Ваш Telegram или номер телефона:</label>
+                <input type="text" name="contact" placeholder="@username или +7..." required>
+            </div>
+            
+            <div class="form-group">
+                <label>Комментарий (пожелания к заказу):</label>
+                <textarea name="comment" placeholder="Например: профиль кейкапа или особенности покраски..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn-buy" style="width: 100%;">Отправить заказ</button>
+        </form>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const cartContainer = document.getElementById('cart-container');
+    const orderFormContainer = document.getElementById('order-form-container');
+    const cartDataInput = document.getElementById('cart_data_input');
+    
+    let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
+
+    function renderCart() {
+        if (cart.length === 0) {
+            cartContainer.innerHTML = "<p style='text-align: center;'>Ваша корзина пуста. Загляните в <a href='/' style='color: var(--text-on-menu);'>каталог</a>!</p>";
+            orderFormContainer.style.display = "none";
+            return;
+        }
+
+        let html = '<table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem;">';
+        let total = 0;
+
+        cart.forEach((item, index) => {
+            let itemTotal = item.price * item.quantity;
+            total += itemTotal;
+            html += `
+                <tr style="border-bottom: 1px dashed rgba(122, 163, 152, 0.4);">
+                    <td style="padding: 10px;"><img src="${item.image}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover;"></td>
+                    <td style="padding: 10px;"><b>${item.title}</b></td>
+                    <td style="padding: 10px;">${item.price} ₽</td>
+                    <td style="padding: 10px;">
+                        <button onclick="changeQty(${index}, -1)" style="padding: 2px 8px; cursor: pointer;">-</button>
+                        <span style="margin: 0 10px;">${item.quantity}</span>
+                        <button onclick="changeQty(${index}, 1)" style="padding: 2px 8px; cursor: pointer;">+</button>
+                    </td>
+                    <td style="padding: 10px; font-weight: bold;">${itemTotal} ₽</td>
+                    <td style="padding: 10px;"><button onclick="removeItem(${index})" style="color: red; border: none; background: none; cursor: pointer;">✕</button></td>
+                </tr>
+            `;
+        });
+        
+        html += `</table><h3 style="text-align: right; color: var(--text-on-menu);">Итого: ${total} ₽</h3>`;
+        cartContainer.innerHTML = html;
+        
+        // Показываем форму и записываем в нее данные корзины
+        orderFormContainer.style.display = "block";
+        cartDataInput.value = JSON.stringify(cart);
+    }
+
+    // Функции управления корзиной (делаем их глобальными)
+    window.changeQty = function(index, delta) {
+        cart[index].quantity += delta;
+        if (cart[index].quantity <= 0) {
+            cart.splice(index, 1);
+        }
+        updateAndRender();
+    }
+
+    window.removeItem = function(index) {
+        cart.splice(index, 1);
+        updateAndRender();
+    }
+
+    function updateAndRender() {
+        localStorage.setItem('bureau_cart', JSON.stringify(cart));
+        updateCartCount();
+        renderCart();
+    }
+
+    // Очищаем корзину после успешной отправки формы
+    document.getElementById('order-form').addEventListener('submit', () => {
+        localStorage.removeItem('bureau_cart');
+    });
+
+    renderCart();
+});
+</script>
+{% endblock %}
