@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.title }} | SeaOddity{% endblock %}
+
+{% block content %}
+<main>
+    <div class="product-container">
+        <div class="product-gallery">
+            <div class="main-image">
+                <img id="mainImage" src="{{ product.image_url }}" alt="{{ product.title }}">
+            </div>
+
+            <div class="thumbnail-list">
+                <div class="thumbnail active" onclick="changeImage('{{ product.image_url }}', this)">
+                    <img src="{{ product.image_url }}">
+                </div>
+
+                {% set gallery = product.gallery_urls.split(',') if product.gallery_urls else [] %}
+                {% for g_img in gallery %}
+                    {% if g_img %}
+                    <div class="thumbnail" onclick="changeImage('{{ g_img }}', this)">
+                        <img src="{{ g_img }}">
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="product-details">
+            <h1 class="product-title">{{ product.title }}</h1>
+            <div class="product-price">{{ product.price }} ₽</div>
+
+            <div class="product-description" style="white-space: pre-wrap;">{{ product.description }}</div>
+
+            {% if product.specifications %}
+            <ul class="product-specs">
+                {% for spec in product.specifications.split('\n') %}
+                    {% if spec.strip() %}
+                        <li>{{ spec }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <div style="margin-top: 1.5rem; background-color: rgba(189, 106, 157, 0.1); padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--text-on-menu);">
+                <h3 style="color: var(--text-on-menu); font-size: 1.2rem; margin-bottom: 0.5rem; font-family: var(--font-main);">Быстрый заказ</h3>
+                <p style="font-size: 0.9rem; margin-bottom: 1rem;">Оставьте свой ник в Telegram или номер телефона, и мы свяжемся с вами для подтверждения заказа.</p>
+
+                <form action="/order" method="POST" style="display: flex; flex-direction: column; gap: 10px;">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+
+                    <input type="text" name="contact" placeholder="@username или +7 (999)..." required style="padding: 12px; border: 1px solid rgba(122, 163, 152, 0.4); border-radius: 4px; font-family: inherit; font-size: 1rem; background-color: var(--bg-main); color: var(--text-main);">
+
+                    <button type="submit" class="btn-buy" style="margin-top: 5px;">Отправить заявку</button>
+                </form>
+            </div>
+
+            <p class="shipping-note" style="margin-top: 1rem;">Изготавливается индивидуально. Отправка в течение 3-5 рабочих дней.</p>
+            <p class="shipping-note">Изготавливается индивидуально. Отправка в течение 3-5 рабочих дней.</p>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function changeImage(newSrc, element) {
+        // Меняем источник главной картинки
+        document.getElementById('mainImage').src = newSrc;
+
+        // Переключаем активную рамку у миниатюр
+        let thumbnails = document.getElementsByClassName('thumbnail');
+        for(let i = 0; i < thumbnails.length; i++) {
+            thumbnails[i].classList.remove('active');
+        }
+        element.classList.add('active');
+    }
+</script>
+{% endblock %}

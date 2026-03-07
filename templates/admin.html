@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Управление | SeaOddity{% endblock %}
+
+{% block header %}
+<div class="admin-container" style="padding-bottom: 0;">
+    <div class="admin-header">
+        <h1>SeaOddity - Панель управления</h1>
+        <a href="/" style="color: var(--text-main); text-decoration: none;">← Вернуться на сайт</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container" style="padding-top: 0;">
+    <div class="dashboard">
+        <div class="panel">
+            <h2>Добавить новый товар</h2>
+            <form action="/admin/add" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Название товара</label>
+                    <input type="text" name="title" placeholder="Например: Мини-Гача" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Цена (₽)</label>
+                    <input type="number" name="price" placeholder="1500" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea name="description" placeholder="Короткое описание товара..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Характеристики (каждая с новой строки)</label>
+                    <textarea name="specifications" placeholder="Например:&#10;Материал: PETG от Bestfilament&#10;Оборудование: Напечатано на Creality Ender V3 SE&#10;Особенности: Ручная постобработка"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Главное фото</label>
+                    <input type="file" name="image" accept="image/*" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Доп. фото (Галерея)</label>
+                    <input type="file" name="gallery" accept="image/*" multiple>
+                </div>
+
+                <button type="submit" class="btn">Сохранить товар</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h2>Текущие товары</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Фото</th>
+                        <th>Название</th>
+                        <th>Цена</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            <img src="{{ product.image_url }}" alt="{{ product.title }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                        </td>
+                        <td>{{ product.title }}</td>
+                        <td>{{ product.price }} ₽</td>
+                        <td>
+                            <a href="/admin/edit/{{ product.id }}" class="action-link">Изменить</a>
+
+                            <form action="/admin/delete/{{ product.id }}" method="POST" style="display:inline;">
+                                <button type="submit" class="action-link" style="color: #d9534f; background:none; border:none; padding:0; font:inherit; cursor:pointer;">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center;">База пуста. Добавьте первый товар!</td>
+                    </tr>
+                    {% endfor %} </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

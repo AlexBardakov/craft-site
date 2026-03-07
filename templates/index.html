@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}SeaOddity | Каталог{% endblock %}
+
+{% block content %}
+<main>
+    <div class="hero">
+        <h1>Каталог мерча</h1>
+        <p>Уникальные вещи ручной работы. Выберите свой идеальный артефакт.</p>
+    </div>
+
+    <div class="catalog">
+        {% for product in products %}
+        <a href="/product/{{ product.id }}" class="product-card">
+            <div class="product-image">
+                <img src="{{ product.image_url }}" alt="{{ product.title }}">
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">{{ product.title }}</h3>
+                <div class="product-price">{{ product.price }} ₽</div>
+                <button class="btn-order">Подробнее</button>
+            </div>
+        </a>
+        {% else %}
+        <p style="grid-column: 1 / -1; text-align: center;">Товаров пока нет. Загляните позже!</p>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}
