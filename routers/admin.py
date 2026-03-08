@@ -7,9 +7,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 
 import models
 from database import get_db
+
+load_dotenv()
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -29,11 +32,22 @@ def get_current_admin(credentials: HTTPBasicCredentials = Depends(security)):
         )
     return credentials.username
 
+
 @router.get("/admin", response_class=HTMLResponse)
-async def read_admin(request: Request, db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
+async def read_admin(request: Request, db: Session = Depends(get_db),
+                     admin: str = Depends(get_current_admin)):
     products = db.query(models.Product).all()
     categories = db.query(models.Category).all()
-    return templates.TemplateResponse("admin.html", {"request": request, "products": products, "categories": categories})
+
+    # Загружаем заказы, сортируем так, чтобы свежие были сверху
+    orders = db.query(models.Order).order_by(models.Order.id.desc()).all()
+
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "products": products,
+        "categories": categories,
+        "orders": orders  # Передаем заказы в HTML
+    })
 
 @router.post("/admin/add")
 async def add_product(
@@ -159,5 +173,18 @@ async def delete_category(cat_id: int, db: Session = Depends(get_db), admin: str
     cat = db.query(models.Category).filter(models.Category.id == cat_id).first()
     if cat:
         db.delete(cat)
+        db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
+@router.post("/admin/order/{order_id}/status")
+async def update_order_status(
+        order_id: int,
+        status: str = Form(...),
+        db: Session = Depends(get_db),
+        admin: str = Depends(get_current_admin)
+):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if order:
+        order.status = status
         db.commit()
     return RedirectResponse(url="/admin", status_code=303)

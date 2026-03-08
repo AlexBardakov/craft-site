@@ -1,11 +1,15 @@
 import os
+import json
 from fastapi import APIRouter, Depends, Form
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 import httpx
+from dotenv import load_dotenv
 
 import models
 from database import get_db
+
+load_dotenv()
 
 router = APIRouter()
 
@@ -15,22 +19,68 @@ ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 
 @router.post("/order")
 async def process_order(
-        product_id: int = Form(...),
+        cart_data: str = Form(...),
+        # Теперь принимаем строку с JSON-данными корзины
         contact: str = Form(...),
+        comment: str = Form(""),  # Комментарий теперь тоже сохраняем
         db: Session = Depends(get_db)
 ):
-    product = db.query(models.Product).filter(
-        models.Product.id == product_id).first()
+    # 1. Расшифровываем JSON строку обратно в список товаров
+    try:
+        cart = json.loads(cart_data)
+    except json.JSONDecodeError:
+        cart = []
 
-    if product and BOT_TOKEN and ADMIN_CHAT_ID:
-        message_text = (
-            f"🚀 <b>НОВЫЙ ЗАКАЗ С САЙТА!</b>\n\n"
-            f"📦 <b>Товар:</b> {product.title}\n"
-            f"🏷 <b>Категория:</b> {product.category}\n"
-            f"💰 <b>Цена:</b> {product.price} ₽\n"
-            f"👤 <b>Контакт:</b> {contact}\n\n"
-            f"Свяжитесь с ним для уточнения деталей доставки."
+    if not cart:
+        # Если корзина по какой-то причине пуста, возвращаем обратно
+        return RedirectResponse(url="/cart", status_code=303)
+
+    # 2. Считаем итоговую сумму и формируем красивый текст для чека
+    items_text = ""
+    total_price = 0
+
+    for item in cart:
+        title = item.get("title", "Неизвестный товар")
+        price = int(item.get("price", 0))
+        qty = int(item.get("quantity", 1))
+        item_total = price * qty
+        total_price += item_total
+
+        items_text += f"▫️ {title} (x{qty}) - {item_total} ₽\n"
+
+    # 3. Сохраняем заказ в НАШУ БАЗУ ДАННЫХ (в новые таблицы Order)
+    new_order = models.Order(
+        customer_contact=contact,
+        total_price=total_price,
+        comment=comment,
+        status="Новый"
+    )
+    db.add(new_order)
+    db.commit()
+    db.refresh(new_order)  # Обновляем, чтобы получить уникальный ID заказа
+
+    # Добавляем каждый товар из корзины в связующую таблицу OrderItem
+    for item in cart:
+        order_item = models.OrderItem(
+            order_id=new_order.id,
+            product_id=int(item.get("id", 0)),
+            quantity=int(item.get("quantity", 1)),
+            price_at_order=int(item.get("price", 0))
         )
+        db.add(order_item)
+    db.commit()
+
+    # 4. Отправляем уведомление в Telegram
+    if BOT_TOKEN and ADMIN_CHAT_ID:
+        message_text = (
+            f"🚀 <b>НОВЫЙ ЗАКАЗ #{new_order.id} С САЙТА!</b>\n\n"
+            f"📦 <b>Состав заказа:</b>\n{items_text}\n"
+            f"💰 <b>Итоговая сумма:</b> {total_price} ₽\n\n"
+            f"👤 <b>Контакт:</b> {contact}\n"
+        )
+
+        if comment:
+            message_text += f"📝 <b>Комментарий:</b> {comment}\n"
 
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         payload = {

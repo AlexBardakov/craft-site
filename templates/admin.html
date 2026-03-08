@@ -116,6 +116,56 @@
             </table>
         </div>
     </div>
+    <div class="panel" style="margin-top: 2.5rem; overflow-x: auto;">
+        <h2>Управление заказами</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Контакты</th>
+                    <th>Состав заказа</th>
+                    <th>Комментарий</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><b>#{{ order.id }}</b></td>
+                    <td>{{ order.customer_contact }}</td>
+                    <td>
+                        <ul class="styled-list" style="margin: 0; padding-left: 0;">
+                        {% for item in order.items %}
+                            <li style="font-size: 0.9rem; padding-left: 1.2rem; margin-bottom: 0;">
+                                {{ item.product.title if item.product else 'Удаленный товар' }} (x{{ item.quantity }})
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </td>
+                    <td style="font-size: 0.9rem; max-width: 250px;">{{ order.comment }}</td>
+                    <td><b>{{ order.total_price }} ₽</b></td>
+                    <td>
+                        <form action="/admin/order/{{ order.id }}/status" method="POST" style="display: flex; gap: 10px; align-items: center; margin: 0;">
+                            <select name="status" style="margin: 0; padding: 5px; min-width: 130px;">
+                                <option value="Новый" {% if order.status == 'Новый' %}selected{% endif %}>Новый</option>
+                                <option value="В очереди" {% if order.status == 'В очереди' %}selected{% endif %}>В очереди на печать</option>
+                                <option value="В работе" {% if order.status == 'В работе' %}selected{% endif %}>На покраске</option>
+                                <option value="Готов" {% if order.status == 'Готов' %}selected{% endif %}>Готов</option>
+                                <option value="Отправлен" {% if order.status == 'Отправлен' %}selected{% endif %}>Отправлен</option>
+                            </select>
+                            <button type="submit" class="btn" style="padding: 5px 10px; width: auto; margin: 0;">✓</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center;">Пока нет ни одного заказа.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
 

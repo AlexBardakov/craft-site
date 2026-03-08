@@ -36,24 +36,25 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    customer_contact = Column(String)  # Telegram/Телефон
-    customer_name = Column(String, default="")  # Имя клиента
-    status = Column(String,
-                    default="Новый")  # Статусы: Новый, В работе, На покраске, Готов, Отправлен
-    created_at = Column(DateTime,
-                        default=datetime.datetime.utcnow)  # Дата и время создания
-    total_price = Column(Integer, default=0)  # Итоговая сумма заказа
-    comment = Column(Text,
-                     default="")  # Пожелания клиента (например, профиль кейкапа или цвета)
+    customer_contact = Column(String)
+    customer_name = Column(String, default="")
+    status = Column(String, default="Новый")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    total_price = Column(Integer, default=0)
+    comment = Column(Text, default="")
+
+    # НОВОЕ: Связываем заказ с его содержимым (списком покупок)
+    items = relationship("OrderItem", backref="order")
 
 
 class OrderItem(Base):
-    """Связующая таблица: какие конкретно товары лежат в заказе"""
     __tablename__ = "order_items"
 
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id"))
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, default=1)
-    price_at_order = Column(
-        Integer)  # Зафиксированная цена на момент оформления
+    price_at_order = Column(Integer)
+
+    # НОВОЕ: Связываем строчку в чеке с конкретным товаром из базы
+    product = relationship("Product")
