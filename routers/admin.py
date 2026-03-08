@@ -1,6 +1,7 @@
 import os
 import shutil
 import secrets
+import math
 from typing import List, Optional
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -34,20 +35,40 @@ def get_current_admin(credentials: HTTPBasicCredentials = Depends(security)):
 
 
 @router.get("/admin", response_class=HTMLResponse)
-async def read_admin(request: Request, db: Session = Depends(get_db),
-                     admin: str = Depends(get_current_admin)):
+async def read_admin(
+        request: Request,
+        page: int = 1,  # <--- Принимаем номер страницы из URL
+        db: Session = Depends(get_db),
+        admin: str = Depends(get_current_admin)
+):
     products = db.query(models.Product).all()
     categories = db.query(models.Category).all()
 
-    # Загружаем заказы, сортируем так, чтобы свежие были сверху
-    orders = db.query(models.Order).order_by(models.Order.id.desc()).all()
+    # Настройки пагинации (показываем по 10 заказов на страницу)
+    per_page = 10
+    total_orders = db.query(models.Order).count()
+    total_pages = math.ceil(total_orders / per_page) if total_orders > 0 else 1
+
+    # Защита: если передали страницу меньше 1 или больше максимума
+    if page < 1: page = 1
+    if page > total_pages: page = total_pages
+
+    # Загружаем только нужный кусок заказов
+    orders = db.query(models.Order) \
+        .order_by(models.Order.id.desc()) \
+        .offset((page - 1) * per_page) \
+        .limit(per_page) \
+        .all()
 
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "products": products,
         "categories": categories,
-        "orders": orders  # Передаем заказы в HTML
+        "orders": orders,
+        "current_page": page,
+        "total_pages": total_pages
     })
+
 
 @router.post("/admin/add")
 async def add_product(
@@ -58,6 +79,12 @@ async def add_product(
         image: UploadFile = File(...),
         gallery: Optional[List[UploadFile]] = File(None),
         specifications: str = Form(""),
+
+        # НОВЫЕ ПОЛЯ:
+        is_active: bool = Form(False),
+        is_made_to_order: bool = Form(False),
+        in_stock: int = Form(0),
+
         db: Session = Depends(get_db),
         admin: str = Depends(get_current_admin)
 ):
@@ -83,12 +110,17 @@ async def add_product(
         category=category,
         image_url=f"/{main_image_path}",
         gallery_urls=gallery_urls_str,
-        specifications=specifications
+        specifications=specifications,
+
+        # СОХРАНЯЕМ В БАЗУ:
+        is_active=is_active,
+        is_made_to_order=is_made_to_order,
+        in_stock=in_stock
     )
 
     db.add(new_product)
     db.commit()
-    return RedirectResponse(url="/admin", status_code=303)
+    return RedirectResponse(url="/admin?tab=products", status_code=303)
 
 @router.post("/admin/delete/{product_id}")
 async def delete_product(product_id: int, db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
@@ -104,6 +136,7 @@ async def edit_product_page(request: Request, product_id: int, db: Session = Dep
     categories = db.query(models.Category).all()
     return templates.TemplateResponse("edit.html", {"request": request, "product": product, "categories": categories})
 
+
 @router.post("/admin/edit/{product_id}")
 async def edit_product_save(
         product_id: int,
@@ -115,18 +148,30 @@ async def edit_product_save(
         new_gallery: Optional[List[UploadFile]] = File(None),
         specifications: str = Form(""),
         delete_gallery: List[str] = Form(default=[]),
+
+        # НОВЫЕ ПОЛЯ:
+        is_active: bool = Form(False),
+        is_made_to_order: bool = Form(False),
+        in_stock: int = Form(0),
+
         db: Session = Depends(get_db),
         admin: str = Depends(get_current_admin)
 ):
-    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    product = db.query(models.Product).filter(
+        models.Product.id == product_id).first()
     if not product:
-        return RedirectResponse(url="/admin", status_code=303)
+        return RedirectResponse(url="/admin?tab=products", status_code=303)
 
     product.title = title
     product.price = price
     product.description = description
     product.category = category
     product.specifications = specifications
+
+    # ОБНОВЛЯЕМ ДАННЫЕ В БАЗЕ:
+    product.is_active = is_active
+    product.is_made_to_order = is_made_to_order
+    product.in_stock = in_stock
 
     if image and image.filename:
         old_image_path = product.image_url.lstrip("/")
@@ -137,7 +182,8 @@ async def edit_product_save(
             shutil.copyfileobj(image.file, buffer)
         product.image_url = f"/{main_image_path}"
 
-    current_gallery = product.gallery_urls.split(",") if product.gallery_urls else []
+    current_gallery = product.gallery_urls.split(
+        ",") if product.gallery_urls else []
     current_gallery = [g for g in current_gallery if g]
 
     for del_img in delete_gallery:
@@ -157,7 +203,7 @@ async def edit_product_save(
 
     product.gallery_urls = ",".join(current_gallery)
     db.commit()
-    return RedirectResponse(url="/admin", status_code=303)
+    return RedirectResponse(url="/admin?tab=products", status_code=303)
 
 @router.post("/admin/category/add")
 async def add_category(name: str = Form(...), db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
@@ -180,6 +226,7 @@ async def delete_category(cat_id: int, db: Session = Depends(get_db), admin: str
 async def update_order_status(
         order_id: int,
         status: str = Form(...),
+        page: int = Form(1), # Принимаем текущую страницу из скрытого поля
         db: Session = Depends(get_db),
         admin: str = Depends(get_current_admin)
 ):
@@ -187,4 +234,5 @@ async def update_order_status(
     if order:
         order.status = status
         db.commit()
-    return RedirectResponse(url="/admin", status_code=303)
+    # Возвращаем пользователя на ту же страницу и на вкладку заказов
+    return RedirectResponse(url=f"/admin?page={page}&tab=orders", status_code=303)

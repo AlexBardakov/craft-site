@@ -72,10 +72,13 @@ header {
 }
 
 header .logo {
-    font-size: 1.8rem;
-    font-weight: bold;
+    font-size: 1.8rem; /* Сделал чуть крупнее, чтобы компенсировать снятие жирности */
+    font-weight: bold; /* Убираем искусственную жирность */
     text-decoration: none;
-    letter-spacing: 1px;
+
+    /* Принудительно включаем лигатуры и завитки (swashes) для браузеров */
+    font-variant-ligatures: common-ligatures contextual;
+    font-feature-settings: "liga" 1, "clig" 1, "swsh" 1;
 }
 
 nav a {
@@ -169,19 +172,23 @@ main {
     border: 1px solid rgba(102, 155, 188, 0.2);
     border-radius: var(--radius-organic-alt);
     background-color: #fff;
-    /* Убрали padding отсюда */
+    overflow: hidden; /* Важно, чтобы штамп не вылезал за рамку карточки */
 }
 
-.product-image img {
+/* --- Главное фото товара (аккуратный квадрат) --- */
+/* Мы используем селектор :not(.stamp-overlay), чтобы
+   эти жесткие правила не применились к штампу */
+.product-image img:not(.stamp-overlay) {
     position: absolute;
-    top: 5px;
+    top: 5px;   /* Отступы паспарту */
     left: 5px;
     /* Вычитаем по 5px с каждой стороны (итого 10px) для эффекта паспарту */
     width: calc(100% - 10px);
     height: calc(100% - 10px);
-    object-fit: cover;
-    border-radius: 2px 3px 2px 4px;
+    object-fit: cover; /* Сохраняем квадрат при разных пропорциях */
+    border-radius: 2px 3px 2px 4px; /* Живой рез */
     display: block;
+    /* Убедись, что фильтры (filter:) для сепии задаются инлайн в HTML, если нужны */
 }
 
 .product-info {
@@ -359,4 +366,91 @@ th { color: var(--c-heading); }
     header { flex-direction: column; gap: 15px; padding: 1.5rem 5%; }
     nav a { margin: 0 10px; }
     nav a::before { display: none; } /* Убираем красные квадратики на мобильных, чтобы не мешали */
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: -1px; /* Нахлест на рамку панели */
+    border-bottom: 2px solid var(--c-accent);
+}
+
+.tab-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--c-text);
+    border-radius: var(--radius-organic) var(--radius-organic) 0 0;
+    opacity: 0.6;
+    transition: all 0.2s;
+}
+
+.tab-btn.active, .tab-btn:hover {
+    opacity: 1;
+    background-color: #fff;
+    border-color: var(--c-accent);
+    color: var(--c-heading);
+}
+
+.tab-btn.active {
+    border-bottom: 2px solid #fff; /* Визуально объединяет вкладку с белой панелью */
+    margin-bottom: -2px;
+}
+
+/* --- Пагинация заказов --- */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 2.5rem;
+}
+
+.pagination a, .pagination span {
+    padding: 8px 15px;
+    border: 1px solid var(--c-accent);
+    border-radius: var(--radius-organic-alt);
+    text-decoration: none;
+    color: var(--c-text);
+    font-weight: bold;
+    background-color: var(--c-bg);
+    transition: all 0.2s;
+}
+
+.pagination a:hover {
+    background-color: var(--c-accent);
+    color: var(--c-bg);
+    transform: translateY(-2px);
+    box-shadow: 2px 2px 0px rgba(193, 18, 31, 0.4);
+}
+
+.pagination span.active {
+    background-color: var(--c-heading);
+    color: var(--c-bg);
+    border-color: var(--c-heading);
+}
+
+/* --- Штамп для товаров на заказ --- */
+/* --- Обновленный штамп-изображение для товаров на заказ --- */
+.stamp-overlay {
+    position: absolute;
+    /* Центрируем штамп ровно по центру контейнера */
+    top: 50%;
+    left: 50%;
+    /* translate для точного центра и поворот для "живого" оттиска */
+    transform: translate(-50%, -50%) rotate(-10deg);
+
+    pointer-events: none; /* Штамп не мешает кликать по товару */
+    z-index: 10; /* Кладём поверх фотографии */
+
+    /* ОГРАНИЧИВАЕМ РАЗМЕР ШТАМПА */
+    /* Пусть он занимает не больше 80% ширины картинки */
+    max-width: 80%;
+    height: auto; /* Сохраняем пропорции изображения штампа */
+
+    /* Добавляем легкую тень, чтобы штамп отделялся от фото */
+    filter: drop-shadow(2px 2px 0px rgba(193, 18, 31, 0.3));
 }

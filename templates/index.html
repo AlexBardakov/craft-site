@@ -13,7 +13,11 @@
         {% for product in products %}
         <a href="/product/{{ product.id }}" class="product-card">
             <div class="product-image">
-                <img src="{{ product.image_url }}" alt="{{ product.title }}">
+                <img src="{{ product.image_url }}" alt="{{ product.title }}" {% if product.in_stock == 0 %}style="filter: sepia(0.3) opacity(0.8);"{% endif %}>
+
+                {% if product.in_stock == 0 %}
+                <img src="/static/images/stamp_custom.png" class="stamp-overlay" alt="На заказ">
+                {% endif %}
             </div>
             <div class="product-info">
                 <h3 class="product-title">{{ product.title }}</h3>

@@ -29,6 +29,21 @@
         <div class="product-details">
             <h1 class="product-title">{{ product.title }}</h1>
             <div class="product-price">{{ product.price }} ₽</div>
+            <div style="margin-bottom: 1.5rem; font-size: 0.95rem;">
+                    {% if product.in_stock > 0 %}
+                    <span style="display: inline-block; padding: 5px 10px; border: 1px solid #4CAF50; color: #2E7D32; border-radius: var(--radius-organic); background: rgba(76, 175, 80, 0.1); font-weight: bold;">
+                        ✓ В наличии: {{ product.in_stock }} шт.
+                    </span>
+                    {% elif product.is_made_to_order %}
+                    <span style="display: inline-block; padding: 5px 10px; border: 1px solid var(--c-accent); color: var(--c-accent); border-radius: var(--radius-organic); background: rgba(102, 155, 188, 0.1); font-weight: bold;">
+                        ⚒ Делается на заказ
+                    </span>
+                    {% else %}
+                    <span style="display: inline-block; padding: 5px 10px; border: 1px solid var(--c-text); color: var(--c-text); border-radius: var(--radius-organic); background: rgba(0, 48, 73, 0.1); font-weight: bold;">
+                        Временно нет в наличии
+                    </span>
+                    {% endif %}
+                </div>
 
             <div class="product-description" style="white-space: pre-wrap;">{{ product.description }}</div>
 
@@ -46,30 +61,34 @@
                 <h3 style="color: var(--text-on-menu); font-size: 1.2rem; margin-bottom: 0.5rem; font-family: var(--font-main);">Быстрый заказ</h3>
                 <p style="font-size: 0.9rem; margin-bottom: 1rem;">Оставьте свой ник в Telegram или номер телефона, и мы свяжемся с вами для подтверждения заказа.</p>
 
-                <button class="btn-buy" onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}')">
-                    Добавить в корзину
-                </button>
+                {% if product.in_stock > 0 %}
+                    <button class="btn-buy" onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}', false)">
+                        Добавить в корзину
+                    </button>
+                    {% else %}
+                    <button class="btn-buy" style="border-color: var(--c-danger); color: var(--c-danger);" onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}', true)">
+                        Заказать изготовление
+                    </button>
+                    <p style="text-align: center; font-size: 0.9rem; margin-top: 10px; opacity: 0.8;">Сроки создания обсуждаются индивидуально</p>
+                    {% endif %}
 
                 <script>
-                function addToCart(id, title, price, image) {
-                    // Достаем корзину из памяти или создаем пустую
+                function addToCart(id, title, price, image, isCustom) {
                     let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
-
-                    // Ищем, есть ли уже такой товар
                     let existingItem = cart.find(item => item.id === id);
 
                     if (existingItem) {
                         existingItem.quantity += 1;
                     } else {
-                        cart.push({ id: id, title: title, price: price, image: image, quantity: 1 });
+                        // ДОБАВЛЯЕМ ПАРАМЕТР is_custom В ПАМЯТЬ КОРЗИНЫ
+                        cart.push({ id: id, title: title, price: price, image: image, quantity: 1, is_custom: isCustom });
                     }
 
-                    // Сохраняем обратно и обновляем счетчик
                     localStorage.setItem('bureau_cart', JSON.stringify(cart));
                     updateCartCount();
 
-                    // Маленькое визуальное подтверждение
-                    alert("Товар добавлен в корзину!");
+                    // Меняем текст уведомления
+                    alert(isCustom ? "Товар добавлен в корзину (на изготовление)!" : "Товар добавлен в корзину!");
                 }
                 </script>
             </div>

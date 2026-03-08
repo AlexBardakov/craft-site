@@ -43,10 +43,15 @@ async def process_order(
         title = item.get("title", "Неизвестный товар")
         price = int(item.get("price", 0))
         qty = int(item.get("quantity", 1))
+
+        # Проверяем, на заказ ли эта позиция
+        is_custom = item.get("is_custom", False)
+        prefix = "🛠 [НА ЗАКАЗ]" if is_custom else "📦 [В НАЛИЧИИ]"
+
         item_total = price * qty
         total_price += item_total
 
-        items_text += f"▫️ {title} (x{qty}) - {item_total} ₽\n"
+        items_text += f"{prefix} {title} (x{qty}) - {item_total} ₽\n"
 
     # 3. Сохраняем заказ в НАШУ БАЗУ ДАННЫХ (в новые таблицы Order)
     new_order = models.Order(
