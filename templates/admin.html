@@ -19,111 +19,95 @@
     </div>
 
     <div id="tab-products" class="tab-content">
-        <div class="dashboard">
-            <div class="panel">
-                <h2>Добавить товар</h2>
-                <form action="/admin/add" method="POST" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label>Название</label>
-                        <input type="text" name="title" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Цена (₽)</label>
-                        <input type="number" name="price" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Категория</label>
-                        <select name="category" required>
-                            {% for cat in categories %}
-                            <option value="{{ cat.name }}">{{ cat.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 20px; margin-bottom: 1.5rem; background: rgba(102, 155, 188, 0.1); padding: 15px; border-radius: var(--radius-organic-alt); border: 1px dashed var(--c-accent);">
-                        <label style="display: flex; align-items: center; gap: 5px; margin: 0; cursor: pointer;">
-                            <input type="checkbox" name="is_active" checked style="width: auto;">
-                            Отображать на сайте
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px; margin: 0; cursor: pointer;">
-                            <input type="checkbox" name="is_made_to_order" checked style="width: auto;">
-                            Делается на заказ
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px; margin: 0;">
-                            В наличии:
-                            <input type="number" name="in_stock" value="0" min="0" style="width: 80px; padding: 5px;">
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>Описание</label>
-                        <textarea name="description" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Главное фото</label>
-                        <input type="file" name="image" accept="image/*" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Галерея (доп. фото)</label>
-                        <input type="file" name="gallery" accept="image/*" multiple>
-                    </div>
-                    <div class="form-group">
-                        <label>Характеристики (каждая с новой строки)</label>
-                        <textarea name="specifications" placeholder="Материал: Фотополимерная смола&#10;Размер: 1U"></textarea>
-                    </div>
-                    <button type="submit" class="btn">Добавить в каталог</button>
-                </form>
+        <div class="panel" style="overflow-x: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="margin: 0;">Каталог товаров</h2>
+                <button class="btn" style="width: auto; padding: 10px 25px;" onclick="openModal('modal-add-product')">+ Добавить товар</button>
             </div>
 
-            <div class="panel" style="overflow-x: auto;">
-                <h2>Список товаров</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Фото</th>
-                            <th>Название</th>
-                            <th>Цена</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for product in products %}
-                        <tr>
-                            <td><img src="{{ product.image_url }}" alt="{{ product.title }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px;"></td>
-                            <td>{{ product.title }}<br><small style="opacity: 0.7;">{{ product.category }}</small></td>
-                            <td>{{ product.price }} ₽</td>
-                            <td>
-                                <a href="/admin/edit/{{ product.id }}" class="action-link">Изменить</a>
-                                <form action="/admin/delete/{{ product.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Точно удалить товар?');">
-                                    <button type="submit" style="color: var(--c-danger); background:none; border:none; cursor:pointer; font-weight:bold;">Удалить</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">Фото</th>
+                        <th>Название и Цена</th>
+                        <th style="text-align: center;">На витрине</th>
+                        <th style="text-align: center;">На заказ</th>
+                        <th style="text-align: center;">Остаток</th>
+                        <th style="text-align: right;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            <img src="{{ product.image_url }}" alt="{{ product.title }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: var(--radius-organic-alt); border: 1px solid var(--c-accent);">
+                        </td>
+                        <td>
+                            <b style="font-size: 1.1rem; color: var(--c-text);">{{ product.title }}</b><br>
+                            <span style="opacity: 0.7; font-size: 0.9rem;">{{ product.category }} • <b>{{ product.price }} ₽</b></span>
+                        </td>
+                        <td style="text-align: center;">
+                            <label class="switch" title="Показывать на сайте">
+                                <input type="checkbox" onchange="quickUpdate({{ product.id }}, 'is_active', this.checked)" {% if product.is_active %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </td>
+                        <td style="text-align: center;">
+                            <label class="switch" title="Изготовление на заказ">
+                                <input type="checkbox" onchange="quickUpdate({{ product.id }}, 'is_made_to_order', this.checked)" {% if product.is_made_to_order %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </td>
+                        <td style="text-align: center;">
+                            <input type="number" class="quick-input" value="{{ product.in_stock }}" min="0" onchange="quickUpdate({{ product.id }}, 'in_stock', this.value)">
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="/admin/edit/{{ product.id }}" class="action-link" style="color: var(--c-accent);">✏️ Изменить</a>
+                            <form action="/admin/delete/{{ product.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Точно удалить товар?');">
+                                <button type="submit" style="color: var(--c-danger); background:none; border:none; cursor:pointer; font-weight:bold;">✕ Удал.</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
     <div id="tab-categories" class="tab-content" style="display: none;">
-        <div class="panel" style="max-width: 600px; margin: 0 auto;">
-            <h2>Управление категориями</h2>
-            <form action="/admin/category/add" method="POST" style="display: flex; gap: 10px; margin-bottom: 2rem;">
-                <input type="text" name="name" placeholder="Новая категория (напр. Открытки)" required style="flex: 1;">
-                <button type="submit" class="btn" style="margin: 0; width: auto;">Добавить</button>
-            </form>
+        <div class="panel">
+            <h2 style="border-bottom: 1px dashed var(--c-accent); padding-bottom: 10px; margin-bottom: 2rem;">Категории каталога</h2>
 
-            <ul class="styled-list" style="margin-bottom: 0;">
-                {% for cat in categories %}
-                <li style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(102, 155, 188, 0.4); padding-bottom: 10px;">
-                    <span style="font-weight: bold;">{{ cat.name }}</span>
-                    <form action="/admin/category/delete/{{ cat.id }}" method="POST" style="margin: 0;" onsubmit="return confirm('Удалить категорию? Товары останутся в базе.');">
-                        <button type="submit" style="color: var(--c-danger); background:none; border:none; padding:0; cursor:pointer; font-weight:bold;">✕ Удалить</button>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 4rem;">
+
+                <div>
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Новый раздел</h3>
+                    <form action="/admin/category/add" method="POST" style="display: flex; flex-direction: column; gap: 15px; background: rgba(102, 155, 188, 0.05); padding: 20px; border-radius: var(--radius-organic-alt); border: 1px solid var(--c-accent);">
+                        <div>
+                            <label style="font-size: 0.9rem;">Название категории</label>
+                            <input type="text" name="name" placeholder="Например: Открытки" required style="width: 100%;">
+                        </div>
+                        <button type="submit" class="btn">Добавить в меню</button>
                     </form>
-                </li>
-                {% else %}
-                <li>Категорий пока нет.</li>
-                {% endfor %}
-            </ul>
+                </div>
+
+                <div>
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Существующие разделы</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                        {% for cat in categories %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--c-accent); padding: 12px 15px; border-radius: var(--radius-organic); background: #fff; box-shadow: 2px 2px 0px rgba(102, 155, 188, 0.2);">
+                            <span style="font-weight: bold; color: var(--c-text);">{{ cat.name }}</span>
+                            <form action="/admin/category/delete/{{ cat.id }}" method="POST" style="margin: 0;" onsubmit="return confirm('Удалить категорию? Сами товары останутся в базе.');">
+                                <button type="submit" style="color: var(--c-danger); background:none; border:none; padding:0; cursor:pointer; font-weight:bold; font-size: 1.1rem; transition: transform 0.2s;" title="Удалить раздел" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">✕</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <p style="opacity: 0.7;">Категорий пока нет.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
@@ -160,12 +144,15 @@
                         <td>
                             <form action="/admin/order/{{ order.id }}/status" method="POST" style="display: flex; gap: 10px; align-items: center; margin: 0;">
                                 <input type="hidden" name="page" value="{{ current_page }}">
-                                <select name="status" style="margin: 0; padding: 5px; min-width: 140px;">
-                                    <option value="Новый" {% if order.status == 'Новый' %}selected{% endif %}>Новый</option>
-                                    <option value="В очереди" {% if order.status == 'В очереди' %}selected{% endif %}>В очереди на печать</option>
-                                    <option value="В работе" {% if order.status == 'В работе' %}selected{% endif %}>На покраске</option>
-                                    <option value="Готов" {% if order.status == 'Готов' %}selected{% endif %}>Готов</option>
-                                    <option value="Отправлен" {% if order.status == 'Отправлен' %}selected{% endif %}>Отправлен</option>
+                                <select name="status"
+                                    class="status-select {% if order.status == 'Новый' %}status-new{% elif order.status == 'В очереди' %}status-queue{% elif order.status == 'В работе' %}status-work{% elif order.status == 'Готов' %}status-ready{% elif order.status == 'Отправлен' %}status-sent{% endif %}"
+                                    onchange="this.className='status-select ' + this.options[this.selectedIndex].getAttribute('data-class')"
+                                    style="margin: 0; padding: 5px; min-width: 140px; border-radius: var(--radius-organic);">
+                                    <option value="Новый" data-class="status-new" {% if order.status == 'Новый' %}selected{% endif %}>Новый</option>
+                                    <option value="В очереди" data-class="status-queue" {% if order.status == 'В очереди' %}selected{% endif %}>В очереди на печать</option>
+                                    <option value="В работе" data-class="status-work" {% if order.status == 'В работе' %}selected{% endif %}>На покраске</option>
+                                    <option value="Готов" data-class="status-ready" {% if order.status == 'Готов' %}selected{% endif %}>Готов</option>
+                                    <option value="Отправлен" data-class="status-sent" {% if order.status == 'Отправлен' %}selected{% endif %}>Отправлен</option>
                                 </select>
                                 <button type="submit" class="btn" style="padding: 5px 10px; width: auto; margin: 0;" title="Сохранить статус">✓</button>
                             </form>
@@ -201,6 +188,56 @@
 
         </div>
     </div>
+    <div id="modal-add-product" class="modal-overlay" onclick="closeModal(event, 'modal-add-product')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModalBtn('modal-add-product')">✕</button>
+            <h2 style="border-bottom: 1px dashed var(--c-accent); padding-bottom: 1rem; margin-bottom: 1.5rem;">Новый товар</h2>
+
+            <form action="/admin/add" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" name="title" required>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Цена (₽)</label>
+                        <input type="number" name="price" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Категория</label>
+                        <select name="category" required>
+                            {% for cat in categories %}
+                            <option value="{{ cat.name }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; background: rgba(102, 155, 188, 0.1); padding: 15px; border-radius: var(--radius-organic-alt); border: 1px dashed var(--c-accent);">
+                    <label style="display: flex; align-items: center; gap: 5px; margin: 0; cursor: pointer; font-size: 0.9rem;">
+                        <input type="checkbox" name="is_active" checked style="width: auto;"> На витрине
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; margin: 0; cursor: pointer; font-size: 0.9rem;">
+                        <input type="checkbox" name="is_made_to_order" checked style="width: auto;"> На заказ
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; margin: 0; font-size: 0.9rem;">
+                        Остаток: <input type="number" name="in_stock" value="0" min="0" style="width: 60px; padding: 3px;">
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea name="description" required style="min-height: 80px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Главное фото</label>
+                    <input type="file" name="image" accept="image/*" required style="padding: 5px; border: none;" onchange="previewImage(this, 'preview-new')">
+                    <img id="preview-new" style="display: none; width: 70px; height: 70px; object-fit: cover; border-radius: var(--radius-organic); border: 1px solid var(--c-accent); margin-top: 10px; box-shadow: 2px 2px 0px rgba(102, 155, 188, 0.4);">
+                </div>
+                <button type="submit" class="btn" style="margin-top: 10px;">Добавить в каталог</button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -226,5 +263,55 @@
         let activeTab = urlParams.get('tab') || 'products';
         openTab(activeTab);
     });
+
+    // Управление модальными окнами
+    function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Убираем прокрутку фона
+    }
+    function closeModalBtn(id) {
+        document.getElementById(id).style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    function closeModal(event, id) {
+        if (event.target.id === id) {
+            closeModalBtn(id);
+        }
+    }
+
+    // Быстрое сохранение (AJAX)
+    async function quickUpdate(productId, field, value) {
+        const formData = new FormData();
+        formData.append('field', field);
+        formData.append('value', value);
+
+        try {
+            const response = await fetch(`/admin/product/${productId}/quick_update`, {
+                method: 'POST',
+                body: formData
+            });
+            if (!response.ok) {
+                alert('Ошибка при сохранении статуса!');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Ошибка сети! Проверьте подключение.');
+        }
+    }
+
+    // Живой предпросмотр загружаемой картинки
+    function previewImage(input, imgId) {
+        const preview = document.getElementById(imgId);
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
+    }
 </script>
 {% endblock %}

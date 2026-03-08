@@ -4,7 +4,7 @@ import secrets
 import math
 from typing import List, Optional
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, HTTPException, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
@@ -236,3 +236,24 @@ async def update_order_status(
         db.commit()
     # Возвращаем пользователя на ту же страницу и на вкладку заказов
     return RedirectResponse(url=f"/admin?page={page}&tab=orders", status_code=303)
+
+@router.post("/admin/product/{product_id}/quick_update")
+async def quick_update_product(
+        product_id: int,
+        field: str = Form(...),
+        value: str = Form(...),
+        db: Session = Depends(get_db),
+        admin: str = Depends(get_current_admin)
+):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if product:
+        # В зависимости от поля меняем нужный параметр
+        if field == "is_active":
+            product.is_active = (value.lower() == "true")
+        elif field == "is_made_to_order":
+            product.is_made_to_order = (value.lower() == "true")
+        elif field == "in_stock":
+            product.in_stock = int(value)
+        db.commit()
+        return JSONResponse(content={"status": "success"})
+    return JSONResponse(content={"status": "error"}, status_code=404)
