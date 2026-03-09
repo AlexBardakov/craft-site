@@ -59,16 +59,53 @@
     {% block scripts %}{% endblock %}
 
     <script>
-        // Функция для обновления счетчика товаров в шапке
+        // Обновление счетчиков корзины (и в шапке, и в плавающей кнопке)
         function updateCartCount() {
             let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
             let count = cart.reduce((sum, item) => sum + item.quantity, 0);
-            document.getElementById('cart-count').innerText = `(${count})`;
+
+            // Обновляем текст в шапке
+            const headerCount = document.getElementById('cart-count');
+            if (headerCount) headerCount.innerText = `(${count})`;
+
+            // Обновляем бейджик на плавающей кнопке
+            const floatBadge = document.getElementById('float-cart-count');
+            if (floatBadge) {
+                floatBadge.innerText = count;
+                // Прячем бейджик, если корзина пуста, чтобы не мусорить на экране
+                floatBadge.style.display = count > 0 ? 'flex' : 'none';
+            }
         }
 
-        // Запускаем при загрузке любой страницы
-        document.addEventListener('DOMContentLoaded', updateCartCount);
+        // Логика появления кнопки "Наверх"
+        function handleScroll() {
+            const scrollTopBtn = document.getElementById('btn-scroll-top');
+            // Показываем кнопку, если прокрутили вниз больше чем на 300 пикселей
+            if (window.scrollY > 300) {
+                scrollTopBtn.classList.add('show');
+            } else {
+                scrollTopBtn.classList.remove('show');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCartCount();
+            // Слушаем прокрутку страницы
+            window.addEventListener('scroll', handleScroll);
+            // Запускаем один раз при загрузке, чтобы проверить, где мы находимся
+            handleScroll();
+        });
     </script>
 
+    <div class="floating-actions">
+        <button class="float-btn" id="btn-scroll-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Наверх">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        </button>
+
+        <a href="/cart" class="float-btn cart-btn" title="Корзина">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            <div class="float-cart-badge" id="float-cart-count">0</div>
+        </a>
+    </div>
 </body>
 </html>

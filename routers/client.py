@@ -15,25 +15,16 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def read_home(request: Request, category: Optional[str] = None,
-                    db: Session = Depends(get_db)):
-    # Обрати внимание: я добавил фильтр is_active == True,
-    # чтобы на сайте отображались только активные товары (из новой модели)
-    if category:
-        products = db.query(models.Product).filter(
-            models.Product.category == category,
-            models.Product.is_active == True).all()
-    else:
-        products = db.query(models.Product).filter(
-            models.Product.is_active == True).all()
-
+async def read_home(request: Request, category: Optional[str] = None, db: Session = Depends(get_db)):
+    # Теперь ВСЕГДА загружаем все активные товары, чтобы построить вкладки
+    products = db.query(models.Product).filter(models.Product.is_active == True).all()
     categories = [c.name for c in db.query(models.Category).all()]
 
     return templates.TemplateResponse("index.html", {
         "request": request,
         "products": products,
         "categories": categories,
-        "active_category": category
+        "active_category": category  # Передаем это для JS, чтобы открыть нужную вкладку
     })
 
 

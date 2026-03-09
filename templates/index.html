@@ -1,33 +1,149 @@
 {% extends "base.html" %}
 
-{% block title %}SeaOddity | Каталог{% endblock %}
+{% block title %}Бюро Кошачье | Авторский 3D-мерч{% endblock %}
 
 {% block content %}
-<main>
-    <div class="hero">
-        <h1>Каталог мерча</h1>
-        <p>Уникальные вещи ручной работы. Выберите свой идеальный артефакт.</p>
+
+{% macro render_product_card(product) %}
+<a href="/product/{{ product.id }}" class="product-card">
+    <div class="product-image">
+        <img src="{{ product.image_url }}" alt="{{ product.title }}" {% if product.in_stock == 0 %}style="filter: sepia(0.3) opacity(0.8);"{% endif %}>
+        {% if product.in_stock == 0 %}
+        <img src="/static/images/stamp_custom.png" class="stamp-overlay" alt="На заказ">
+        {% endif %}
     </div>
-
-    <div class="catalog">
-        {% for product in products %}
-        <a href="/product/{{ product.id }}" class="product-card">
-            <div class="product-image">
-                <img src="{{ product.image_url }}" alt="{{ product.title }}" {% if product.in_stock == 0 %}style="filter: sepia(0.3) opacity(0.8);"{% endif %}>
-
-                {% if product.in_stock == 0 %}
-                <img src="/static/images/stamp_custom.png" class="stamp-overlay" alt="На заказ">
-                {% endif %}
-            </div>
-            <div class="product-info">
-                <h3 class="product-title">{{ product.title }}</h3>
-                <div class="product-price">{{ product.price }} ₽</div>
-                <button class="btn-order">Подробнее</button>
-            </div>
-        </a>
+    <div class="product-info">
+        <h3 class="product-title">{{ product.title }}</h3>
+        <p class="product-price">{{ product.price }} ₽</p>
+        {% if product.in_stock > 0 %}
+        <button class="btn-buy" onclick="event.preventDefault(); addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}', false)">Добавить в корзину</button>
         {% else %}
-        <p style="grid-column: 1 / -1; text-align: center;">Товаров пока нет. Загляните позже!</p>
-        {% endfor %}
+        <button class="btn-buy" style="border-color: var(--c-danger); color: var(--c-danger);" onclick="event.preventDefault(); addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}', true)">Заказать изготовление</button>
+        {% endif %}
     </div>
+</a>
+{% endmacro %}
+
+<section style="text-align: center; padding: 3rem 5% 1rem;">
+    <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem; letter-spacing: 1px;">Каталог мерча</h1>
+    <p style="opacity: 0.8; max-width: 600px; margin: 0 auto; font-size: 1.1rem;">
+        Авторские фигурки, кейкапы и электроника ручной сборки.
+        Каждая деталь напечатана и окрашена с любовью.
+    </p>
+</section>
+
+<div class="notebook-tabs">
+    <button class="notebook-tab" onclick="openCatalogTab('all')" id="btn-cat-all">Все</button>
+    {% for cat in categories %}
+    <button class="notebook-tab" onclick="openCatalogTab('{{ cat }}')" id="btn-cat-{{ cat|replace(' ', '-') }}">{{ cat }}</button>
+    {% endfor %}
+</div>
+
+<main style="margin-top: 0; border-top-left-radius: 0;">
+
+    <div id="tab-cat-all" class="catalog-tab-content">
+        {% for cat in categories %}
+            {% set ns = namespace(has_products=false) %}
+            {% for p in products %}{% if p.category == cat %}{% set ns.has_products = true %}{% endif %}{% endfor %}
+
+            {% if ns.has_products %}
+            <div class="category-divider">
+                <span>{{ cat }}</span>
+            </div>
+            <div class="catalog">
+                {% for product in products %}
+                    {% if product.category == cat %}
+                        {{ render_product_card(product) }}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        {% set ns_uncat = namespace(has_products=false) %}
+        {% for p in products %}{% if p.category not in categories %}{% set ns_uncat.has_products = true %}{% endif %}{% endfor %}
+
+        {% if ns_uncat.has_products %}
+        <div class="category-divider"><span>Прочее</span></div>
+        <div class="catalog">
+            {% for product in products %}
+                {% if product.category not in categories %}
+                    {{ render_product_card(product) }}
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% for cat in categories %}
+    <div id="tab-cat-{{ cat|replace(' ', '-') }}" class="catalog-tab-content" style="display: none;">
+
+        {% set ns = namespace(has_products=false) %}
+        {% for p in products %}{% if p.category == cat %}{% set ns.has_products = true %}{% endif %}{% endfor %}
+
+        {% if ns.has_products %}
+        <div class="catalog" style="margin-top: 2rem;">
+            {% for product in products %}
+                {% if product.category == cat %}
+                    {{ render_product_card(product) }}
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 4rem 0; opacity: 0.6;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 1rem;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            <p style="font-size: 1.2rem;">В этом разделе пока пусто, но скоро здесь появится что-то интересное!</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
 </main>
+
+<script>
+    // Логика переключения вкладок-регистров
+    function openCatalogTab(tabName) {
+        // Скрываем все вкладки
+        document.querySelectorAll('.catalog-tab-content').forEach(tab => tab.style.display = 'none');
+        document.querySelectorAll('.notebook-tab').forEach(btn => btn.classList.remove('active'));
+
+        // Форматируем имя для ID (заменяем пробелы на дефисы)
+        const safeTabName = tabName.replace(/ /g, '-');
+
+        const targetTab = document.getElementById('tab-cat-' + safeTabName);
+        const targetBtn = document.getElementById('btn-cat-' + safeTabName);
+
+        // Показываем нужную
+        if (targetTab && targetBtn) {
+            targetTab.style.display = 'block';
+            targetBtn.classList.add('active');
+        } else {
+            // Фолбэк на "Все"
+            document.getElementById('tab-cat-all').style.display = 'block';
+            document.getElementById('btn-cat-all').classList.add('active');
+            tabName = 'all';
+        }
+
+        // Запоминаем вкладку в URL
+        const url = new URL(window.location);
+        if (tabName === 'all') {
+            url.searchParams.delete('category');
+        } else {
+            url.searchParams.set('category', tabName);
+        }
+        window.history.pushState({}, '', url);
+    }
+
+    // При загрузке страницы проверяем URL
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        let activeCategory = "{{ active_category }}" !== "None" ? "{{ active_category }}" : urlParams.get('category');
+
+        if (activeCategory) {
+            openCatalogTab(activeCategory);
+        } else {
+            openCatalogTab('all');
+        }
+    });
+</script>
 {% endblock %}

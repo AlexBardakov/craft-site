@@ -2,6 +2,8 @@ import os
 import shutil
 import secrets
 import math
+from datetime import datetime, timedelta
+from sqlalchemy import func
 from typing import List, Optional
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -37,23 +39,36 @@ def get_current_admin(credentials: HTTPBasicCredentials = Depends(security)):
 @router.get("/admin", response_class=HTMLResponse)
 async def read_admin(
         request: Request,
-        page: int = 1,  # <--- Принимаем номер страницы из URL
+        page: int = 1,
         db: Session = Depends(get_db),
         admin: str = Depends(get_current_admin)
 ):
     products = db.query(models.Product).all()
     categories = db.query(models.Category).all()
 
-    # Настройки пагинации (показываем по 10 заказов на страницу)
+    # --- НАЧАЛО БЛОКА АНАЛИТИКИ ---
+    total_products = db.query(models.Product).count()
+    new_orders_count = db.query(models.Order).filter(models.Order.status == 'Новый').count()
+
+    # Считаем выручку
+    total_rev = db.query(func.sum(models.Order.total_price)).scalar() or 0
+
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    rev_30d = db.query(func.sum(models.Order.total_price)).filter(
+        models.Order.created_at >= thirty_days_ago).scalar() or 0
+
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    rev_7d = db.query(func.sum(models.Order.total_price)).filter(
+        models.Order.created_at >= seven_days_ago).scalar() or 0
+    # --- КОНЕЦ БЛОКА АНАЛИТИКИ ---
+
     per_page = 10
     total_orders = db.query(models.Order).count()
     total_pages = math.ceil(total_orders / per_page) if total_orders > 0 else 1
 
-    # Защита: если передали страницу меньше 1 или больше максимума
     if page < 1: page = 1
     if page > total_pages: page = total_pages
 
-    # Загружаем только нужный кусок заказов
     orders = db.query(models.Order) \
         .order_by(models.Order.id.desc()) \
         .offset((page - 1) * per_page) \
@@ -66,7 +81,15 @@ async def read_admin(
         "categories": categories,
         "orders": orders,
         "current_page": page,
-        "total_pages": total_pages
+        "total_pages": total_pages,
+        # Передаем цифры в шаблон
+        "stats": {
+            "total_products": total_products,
+            "new_orders": new_orders_count,
+            "rev_all": total_rev,
+            "rev_30d": rev_30d,
+            "rev_7d": rev_7d
+        }
     })
 
 
