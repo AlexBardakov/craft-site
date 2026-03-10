@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SeaOddity{% endblock %}</title>
+    <title>{% block title %}CatBuro{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/style.css?v=2.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
 </head>
 <body>
 
@@ -61,7 +63,7 @@
         </div>
     </footer>
     {% endblock %}
-
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     {% block scripts %}{% endblock %}
 
     <script>
@@ -113,5 +115,108 @@
             <div class="float-cart-badge" id="float-cart-count">0</div>
         </a>
     </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // Функция показа красивых уведомлений
+        function showToast(message, isCustom = false) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            // Назначаем классы в зависимости от того, товар в наличии или на заказ
+            toast.className = `toast ${isCustom ? 'toast-custom' : 'toast-success'}`;
+            const icon = isCustom ? '⚒' : '✓';
+
+            toast.innerHTML = `<span class="toast-icon">${icon}</span><span class="toast-message">${message}</span>`;
+            container.appendChild(toast);
+
+            // Запускаем анимацию появления
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Удаляем тост через 3 секунды
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400); // Ждем окончания анимации
+            }, 3000);
+        }
+
+        // ГЛОБАЛЬНАЯ ФУНКЦИЯ ДОБАВЛЕНИЯ В КОРЗИНУ (с поддержкой вариаций)
+        function addToCart(id, title, price, image, isCustom, variantId = null) {
+            let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
+
+            // Ищем товар, проверяя не только ID, но и выбранный вариант!
+            let existingItem = cart.find(item => item.id === id && item.variant_id === variantId);
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: id,
+                    variant_id: variantId, // Сохраняем ID вариации для базы данных
+                    title: title,
+                    price: price,
+                    image: image,
+                    quantity: 1,
+                    is_custom: isCustom
+                });
+            }
+
+            localStorage.setItem('bureau_cart', JSON.stringify(cart));
+            updateCartCount();
+            showToast(isCustom ? "Добавлено (на заказ)" : "Добавлено в корзину", isCustom);
+        }
+
+        // Обновление счетчиков корзины (оставляем как было)
+        function updateCartCount() {
+            let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
+            let count = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+            const headerCount = document.getElementById('cart-count');
+            if (headerCount) headerCount.innerText = `(${count})`;
+
+            const floatBadge = document.getElementById('float-cart-count');
+            if (floatBadge) {
+                floatBadge.innerText = count;
+                floatBadge.style.display = count > 0 ? 'flex' : 'none';
+            }
+        }
+
+        function handleScroll() {
+            const scrollTopBtn = document.getElementById('btn-scroll-top');
+            if (window.scrollY > 300) {
+                scrollTopBtn.classList.add('show');
+            } else {
+                scrollTopBtn.classList.remove('show');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCartCount();
+            window.addEventListener('scroll', handleScroll);
+            handleScroll();
+
+            // --- НОВЫЙ КОД: Логика плавного появления элементов ---
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1 // Анимация стартует, когда элемент видно на 10%
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target); // Анимируем только 1 раз
+                    }
+                });
+            }, observerOptions);
+
+            // Находим все скрытые секции и следим за ними
+            document.querySelectorAll('.fade-in-section').forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
 </body>
 </html>

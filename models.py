@@ -16,21 +16,39 @@ class Product(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
-    price = Column(Integer)
+    price = Column(Integer)  # Это будет базовая цена
     description = Column(Text)
     category = Column(String, index=True)
     image_url = Column(String)
     gallery_urls = Column(Text, default="")
     specifications = Column(Text, default="")
 
-    # --- НОВЫЕ ПОЛЯ ДЛЯ МАСШТАБИРОВАНИЯ ---
-    is_active = Column(Boolean, default=True)  # Показывать ли на сайте
-    in_stock = Column(Integer, default=0)  # Количество готовых в наличии
-    is_made_to_order = Column(Boolean,
-                              default=True)  # Делается ли на заказ (требует времени)
+    is_active = Column(Boolean, default=True)
+
+    # ВНИМАНИЕ: Если у товара есть вариации, эти два поля станут "запасными" (для простых товаров без вариаций)
+    in_stock = Column(Integer, default=0)
+    is_made_to_order = Column(Boolean, default=True)
+
+    # --- НОВОЕ: Связь с вариациями ---
+    variants = relationship("ProductVariant", backref="product",
+                            cascade="all, delete-orphan")
 
 
-# --- НОВЫЕ ТАБЛИЦЫ ДЛЯ БУДУЩЕЙ СИСТЕМЫ ЗАКАЗОВ ---
+# --- НОВАЯ ТАБЛИЦА: Вариации товара (цвет, материал, размер) ---
+class ProductVariant(Base):
+    __tablename__ = "product_variants"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"))
+
+    name = Column(String)  # Например: "Красный (ABS)", "Полупрозрачная смола"
+    in_stock = Column(Integer, default=0)  # Индивидуальный остаток
+    is_made_to_order = Column(Boolean, default=False)
+
+    price_modifier = Column(Integer,
+                            default=0)  # Добавка к базовой цене (например, +500 руб за сложный пластик)
+    image_url = Column(String, default="")  # Специфичное фото для этой версии
+
 
 class Order(Base):
     __tablename__ = "orders"
@@ -43,7 +61,6 @@ class Order(Base):
     total_price = Column(Integer, default=0)
     comment = Column(Text, default="")
 
-    # НОВОЕ: Связываем заказ с его содержимым (списком покупок)
     items = relationship("OrderItem", backref="order")
 
 
@@ -53,8 +70,16 @@ class OrderItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id"))
     product_id = Column(Integer, ForeignKey("products.id"))
+
+    # --- НОВОЕ: Привязка купленного айтема к конкретной вариации ---
+    variant_id = Column(Integer, ForeignKey("product_variants.id"),
+                        nullable=True)
+    variant_name = Column(String,
+                          default="")  # Сохраняем имя на случай, если вариацию потом удалят
+
     quantity = Column(Integer, default=1)
     price_at_order = Column(Integer)
 
-    # НОВОЕ: Связываем строчку в чеке с конкретным товаром из базы
     product = relationship("Product")
+    # Добавляем связь с вариацией
+    variant = relationship("ProductVariant")

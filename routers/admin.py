@@ -194,7 +194,8 @@ async def edit_product_save(
     # ОБНОВЛЯЕМ ДАННЫЕ В БАЗЕ:
     product.is_active = is_active
     product.is_made_to_order = is_made_to_order
-    product.in_stock = in_stock
+    if not product.variants:
+        product.in_stock = in_stock
 
     if image and image.filename:
         old_image_path = product.image_url.lstrip("/")
@@ -280,3 +281,122 @@ async def quick_update_product(
         db.commit()
         return JSONResponse(content={"status": "success"})
     return JSONResponse(content={"status": "error"}, status_code=404)
+
+
+# --- УПРАВЛЕНИЕ ВАРИАЦИЯМИ ТОВАРОВ ---
+
+@router.post("/admin/product/{product_id}/variant/add")
+async def add_product_variant(
+        product_id: int,
+        name: str = Form(...),
+        in_stock: int = Form(0),
+        is_made_to_order: bool = Form(False),
+        price_modifier: int = Form(0),
+        image: UploadFile = File(None),
+        db: Session = Depends(get_db),
+        admin: str = Depends(get_current_admin)
+):
+    product = db.query(models.Product).filter(
+        models.Product.id == product_id).first()
+    if not product:
+        return RedirectResponse(url="/admin?tab=products", status_code=303)
+
+    image_url = ""
+    if image and image.filename:
+        variant_image_path = f"static/images/var_{image.filename}"
+        with open(variant_image_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        image_url = f"/{variant_image_path}"
+
+    new_variant = models.ProductVariant(
+        product_id=product_id, name=name, in_stock=in_stock,
+        is_made_to_order=is_made_to_order, price_modifier=price_modifier,
+        image_url=image_url
+    )
+    db.add(new_variant)
+    db.commit()
+
+    # НОВОЕ: Пересчитываем общий остаток товара (сумма всех вариантов)
+    product.in_stock = sum(v.in_stock for v in product.variants)
+    db.commit()
+
+    return RedirectResponse(url=f"/admin/edit/{product_id}", status_code=303)
+
+
+@router.post("/admin/variant/delete/{variant_id}")
+async def delete_product_variant(
+        variant_id: int,
+        db: Session = Depends(get_db),
+        admin: str = Depends(get_current_admin)
+):
+    variant = db.query(models.ProductVariant).filter(
+        models.ProductVariant.id == variant_id).first()
+    if variant:
+        product_id = variant.product_id
+        if variant.image_url:
+            del_path = variant.image_url.lstrip("/")
+            if os.path.exists(del_path):
+                os.remove(del_path)
+
+        db.delete(variant)
+        db.commit()
+
+        # НОВОЕ: Пересчитываем общий остаток после удаления
+        product = db.query(models.Product).filter(
+            models.Product.id == product_id).first()
+        product.in_stock = sum(v.in_stock for v in
+                               product.variants) if product.variants else product.in_stock
+        db.commit()
+
+        return RedirectResponse(url=f"/admin/edit/{product_id}",
+                                status_code=303)
+
+    return RedirectResponse(url="/admin?tab=products", status_code=303)
+
+
+@router.post("/admin/variant/edit/{variant_id}")
+async def edit_product_variant(
+        variant_id: int,
+        name: str = Form(...),
+        in_stock: int = Form(0),
+        is_made_to_order: bool = Form(False),
+        price_modifier: int = Form(0),
+        image: UploadFile = File(None),
+        db: Session = Depends(get_db),
+        admin: str = Depends(get_current_admin)
+):
+    variant = db.query(models.ProductVariant).filter(
+        models.ProductVariant.id == variant_id).first()
+    if not variant:
+        return RedirectResponse(url="/admin?tab=products", status_code=303)
+
+    product_id = variant.product_id
+
+    # Обновляем текстовые и числовые данные
+    variant.name = name
+    variant.in_stock = in_stock
+    variant.is_made_to_order = is_made_to_order
+    variant.price_modifier = price_modifier
+
+    # Если загрузили новую картинку для вариации — заменяем старую
+    if image and image.filename:
+        if variant.image_url:
+            old_path = variant.image_url.lstrip("/")
+            if os.path.exists(old_path):
+                os.remove(old_path)
+
+        variant_image_path = f"static/images/var_{image.filename}"
+        with open(variant_image_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        variant.image_url = f"/{variant_image_path}"
+
+    db.commit()
+
+    # Пересчитываем общий остаток товара (сумма всех обновленных вариантов)
+    product = db.query(models.Product).filter(
+        models.Product.id == product_id).first()
+    if product:
+        product.in_stock = sum(v.in_stock for v in product.variants)
+        db.commit()
+
+    return RedirectResponse(url=f"/admin/edit/{product_id}", status_code=303)

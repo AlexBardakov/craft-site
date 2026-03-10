@@ -4,25 +4,53 @@
 
 {% block content %}
 <main>
+    <div style="max-width: 1200px; margin: 0 auto 1.5rem auto;">
+        <a href="/" class="btn" style="background-color: transparent; color: var(--c-text); border-color: var(--c-accent); width: auto; padding: 8px 15px; text-decoration: none; font-size: 0.9rem; display: inline-block;">
+            ← Вернуться в каталог
+        </a>
+    </div>
+
     <div class="product-container">
         <div class="product-gallery">
-            <div class="main-image">
-                <img id="mainImage" src="{{ product.image_url }}" alt="{{ product.title }}">
+            <div style="--swiper-navigation-color: var(--c-danger); --swiper-pagination-color: var(--c-danger);" class="swiper main-swiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide"><img src="{{ product.image_url }}" alt="{{ product.title }}"></div>
+
+                    {% set gallery = product.gallery_urls.split(',') if product.gallery_urls else [] %}
+                    {% for g_img in gallery %}
+                        {% if g_img %}
+                        <div class="swiper-slide"><img src="{{ g_img }}" alt="Галерея"></div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if product.variants %}
+                        {% for var in product.variants %}
+                            {% if var.image_url %}
+                            <div class="swiper-slide"><img src="{{ var.image_url }}" alt="{{ var.name }}"></div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="swiper-button-next"></div>
+                <div class="swiper-button-prev"></div>
             </div>
 
-            <div class="thumbnail-list">
-                <div class="thumbnail active" onclick="changeImage('{{ product.image_url }}', this)">
-                    <img src="{{ product.image_url }}">
-                </div>
-
-                {% set gallery = product.gallery_urls.split(',') if product.gallery_urls else [] %}
-                {% for g_img in gallery %}
-                    {% if g_img %}
-                    <div class="thumbnail" onclick="changeImage('{{ g_img }}', this)">
-                        <img src="{{ g_img }}">
-                    </div>
+            <div class="swiper thumbs-swiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide"><img src="{{ product.image_url }}"></div>
+                    {% for g_img in gallery %}
+                        {% if g_img %}
+                        <div class="swiper-slide"><img src="{{ g_img }}"></div>
+                        {% endif %}
+                    {% endfor %}
+                    {% if product.variants %}
+                        {% for var in product.variants %}
+                            {% if var.image_url %}
+                            <div class="swiper-slide"><img src="{{ var.image_url }}" title="{{ var.name }}"></div>
+                            {% endif %}
+                        {% endfor %}
                     {% endif %}
-                {% endfor %}
+                </div>
             </div>
         </div>
 
@@ -30,14 +58,18 @@
             <h1 class="product-title">{{ product.title }}</h1>
 
             <div class="price-status-row">
-                <div class="product-price">{{ product.price }} ₽</div>
-                {% if product.in_stock > 0 %}
-                    <span class="status-badge badge-stock">✓ В наличии: {{ product.in_stock }} шт.</span>
-                {% elif product.is_made_to_order %}
-                    <span class="status-badge badge-custom">⚒ Делается на заказ</span>
-                {% else %}
-                    <span class="status-badge badge-empty">Временно нет в наличии</span>
-                {% endif %}
+                <div class="product-price" id="display-price" data-base-price="{{ product.price }}">{{ product.price }} ₽</div>
+                <div id="display-status">
+                    {% if not product.variants %}
+                        {% if product.in_stock > 0 %}
+                            <span class="status-badge badge-stock">✓ В наличии: {{ product.in_stock }} шт.</span>
+                        {% elif product.is_made_to_order %}
+                            <span class="status-badge badge-custom">⚒ Делается на заказ</span>
+                        {% else %}
+                            <span class="status-badge badge-empty">Временно нет в наличии</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
             </div>
 
             <div class="product-description" style="white-space: pre-wrap;">{{ product.description }}</div>
@@ -52,41 +84,37 @@
             </ul>
             {% endif %}
 
+            {% if product.variants %}
+            <div class="variants-section" style="margin: 1.5rem 0; padding: 1.5rem; background: #fff; border: 1px dashed var(--c-accent); border-radius: var(--radius-organic-alt); box-shadow: 2px 2px 0px rgba(102, 155, 188, 0.2);">
+                <h4 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--c-heading); font-family: var(--font-heading);">Выберите вариант:</h4>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    {% for var in product.variants %}
+                    <label class="variant-label" style="cursor: pointer; padding: 8px 15px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic); transition: all 0.2s; user-select: none;">
+                        <input type="radio" name="variant" value="{{ var.id }}"
+                               data-name="{{ var.name }}"
+                               data-modifier="{{ var.price_modifier }}"
+                               data-stock="{{ var.in_stock }}"
+                               data-custom="{{ 'true' if var.is_made_to_order else 'false' }}"
+                               data-image="{{ var.image_url }}"
+                               onchange="updateVariant(this)"
+                               style="display: none;">
+                        <span style="font-weight: bold;">{{ var.name }}</span>
+                        {% if var.price_modifier > 0 %}<span style="font-size: 0.85rem; color: var(--c-danger); margin-left: 5px;">+{{ var.price_modifier }} ₽</span>{% endif %}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             <div class="action-panel">
                 <h3 class="panel-title">Оформление заказа</h3>
                 <p class="panel-desc">Оставьте свой ник в Telegram или номер телефона при оформлении корзины, и мы свяжемся с вами.</p>
-
-                {% if product.in_stock > 0 %}
-                    <button class="btn-buy" onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}', false)">
-                        Добавить в корзину
-                    </button>
-                {% else %}
-                    <button class="btn-buy btn-custom" onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}', true)">
-                        Заказать изготовление
-                    </button>
-                    <p class="custom-note">Сроки создания обсуждаются индивидуально</p>
-                {% endif %}
+                <button id="btn-add-to-cart" class="btn-buy" onclick="addCurrentToCart()">Добавить в корзину</button>
+                <p id="custom-note" class="custom-note" style="display: none;">Сроки создания обсуждаются индивидуально</p>
             </div>
 
             <p class="shipping-note">Изготавливается индивидуально. Отправка в течение 3-5 рабочих дней.</p>
-
-            <script>
-            function addToCart(id, title, price, image, isCustom) {
-                let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
-                let existingItem = cart.find(item => item.id === id);
-
-                if (existingItem) {
-                    existingItem.quantity += 1;
-                } else {
-                    cart.push({ id: id, title: title, price: price, image: image, quantity: 1, is_custom: isCustom });
-                }
-
-                localStorage.setItem('bureau_cart', JSON.stringify(cart));
-                updateCartCount();
-                alert(isCustom ? "Товар добавлен в корзину (на изготовление)!" : "Товар добавлен в корзину!");
-            }
-            </script>
-        </div>
+            </div>
     </div>
 </main>
 {% endblock %}
@@ -108,6 +136,162 @@
             thumbnails[i].classList.remove('active');
         }
         element.classList.add('active');
+    }
+
+    // Инициализация миниатюр
+    var thumbsSwiper = new Swiper(".thumbs-swiper", {
+        spaceBetween: 10,
+        slidesPerView: 4, // Количество миниатюр в ряду
+        freeMode: true,
+        watchSlidesProgress: true,
+    });
+
+    // Инициализация главного слайдера
+    var mainSwiper = new Swiper(".main-swiper", {
+        spaceBetween: 10,
+        navigation: {
+            nextEl: ".swiper-button-next",
+            prevEl: ".swiper-button-prev",
+        },
+        thumbs: {
+            swiper: thumbsSwiper,
+        },
+    });
+
+    const basePrice = {{ product.price }};
+    const productTitle = "{{ product.title }}";
+    const productId = {{ product.id }};
+    const hasVariants = {% if product.variants %}true{% else %}false{% endif %};
+    let currentMainImage = "{{ product.image_url }}";
+
+    // Функция переключения вариаций
+    function updateVariant(radio) {
+        // Меняем стили у всех кнопок (сброс)
+        document.querySelectorAll('.variant-label').forEach(lbl => {
+            lbl.style.background = 'transparent';
+            lbl.style.boxShadow = 'none';
+            lbl.style.borderColor = 'var(--c-accent)';
+        });
+
+        // Выделяем нажатую кнопку
+        radio.parentElement.style.background = 'rgba(254, 248, 236, 0.8)';
+        radio.parentElement.style.boxShadow = '2px 3px 0px rgba(102, 155, 188, 0.4)';
+        radio.parentElement.style.borderColor = 'var(--c-heading)';
+
+        // 1. Обновляем цену
+        const modifier = parseInt(radio.getAttribute('data-modifier')) || 0;
+        document.getElementById('display-price').innerText = (basePrice + modifier) + ' ₽';
+
+        // 2. Обновляем статус и кнопку корзины
+        const stock = parseInt(radio.getAttribute('data-stock')) || 0;
+        const isCustom = radio.getAttribute('data-custom') === 'true';
+        const statusBox = document.getElementById('display-status');
+        const btn = document.getElementById('btn-add-to-cart');
+        const note = document.getElementById('custom-note');
+
+        if (stock > 0) {
+            statusBox.innerHTML = `<span class="status-badge badge-stock">✓ В наличии: ${stock} шт.</span>`;
+            btn.innerText = "Добавить в корзину";
+            btn.className = "btn-buy";
+            btn.disabled = false;
+            note.style.display = 'none';
+        } else if (isCustom) {
+            statusBox.innerHTML = `<span class="status-badge badge-custom">⚒ Делается на заказ</span>`;
+            btn.innerText = "Заказать изготовление";
+            btn.className = "btn-buy btn-custom";
+            btn.disabled = false;
+            note.style.display = 'block';
+        } else {
+            statusBox.innerHTML = `<span class="status-badge badge-empty">Временно нет в наличии</span>`;
+            btn.innerText = "Нет в наличии";
+            btn.className = "btn-buy";
+            btn.disabled = true;
+            note.style.display = 'none';
+            // Делаем кнопку серой
+            btn.style.borderColor = 'gray'; btn.style.color = 'gray';
+        }
+
+        // 3. Умное переключение картинки через Swiper (Решение пункта 3)
+        const newImg = radio.getAttribute('data-image');
+        if (newImg && newImg !== 'None' && newImg !== '') {
+            currentMainImage = newImg;
+
+            // Ищем все картинки внутри главного слайдера
+            const slides = document.querySelectorAll('.main-swiper .swiper-slide img');
+            let targetIndex = 0;
+
+            // Находим индекс слайда, который совпадает с фото вариации
+            slides.forEach((img, index) => {
+                // getAttribute('src') берет относительный путь
+                if (img.getAttribute('src') === newImg) {
+                    targetIndex = index;
+                }
+            });
+
+            // Если у нас инициализирован Swiper, командуем ему перелистнуть
+            if (typeof mainSwiper !== 'undefined') {
+                mainSwiper.slideTo(targetIndex);
+            }
+        } else {
+            // Если у вариации нет своего фото, возвращаемся на первую (базовую) картинку
+            currentMainImage = "{{ product.image_url }}";
+            if (typeof mainSwiper !== 'undefined') {
+                mainSwiper.slideTo(0);
+            }
+        }
+    }
+
+    // Инициализация (автоматически выбираем первую вариацию при загрузке страницы)
+    document.addEventListener('DOMContentLoaded', () => {
+        if (hasVariants) {
+            const firstRadio = document.querySelector('input[name="variant"]');
+            if (firstRadio) {
+                firstRadio.checked = true;
+                updateVariant(firstRadio);
+            }
+        } else {
+            // Логика для простых товаров без вариаций
+            const btn = document.getElementById('btn-add-to-cart');
+            const inStock = {{ product.in_stock }};
+            const isMadeToOrder = {% if product.is_made_to_order %}true{% else %}false{% endif %};
+            if (inStock === 0 && isMadeToOrder) {
+                btn.innerText = "Заказать изготовление";
+                btn.className = "btn-buy btn-custom";
+                document.getElementById('custom-note').style.display = 'block';
+            } else if (inStock === 0 && !isMadeToOrder) {
+                btn.innerText = "Нет в наличии";
+                btn.disabled = true;
+                btn.style.borderColor = 'gray'; btn.style.color = 'gray';
+            }
+        }
+    });
+
+    // Функция отправки правильных данных в глобальную корзину
+    function addCurrentToCart() {
+        let finalTitle = productTitle;
+        let finalPrice = basePrice;
+        let isCustom = false;
+        let variantId = null;
+
+        if (hasVariants) {
+            const selectedVariant = document.querySelector('input[name="variant"]:checked');
+            if (selectedVariant) {
+                finalTitle = `${productTitle} (${selectedVariant.getAttribute('data-name')})`;
+                finalPrice = basePrice + parseInt(selectedVariant.getAttribute('data-modifier') || 0);
+                isCustom = selectedVariant.getAttribute('data-custom') === 'true';
+                variantId = selectedVariant.value;
+
+                if (parseInt(selectedVariant.getAttribute('data-stock')) > 0) isCustom = false;
+            } else {
+                alert('Пожалуйста, выберите вариант товара.');
+                return;
+            }
+        } else {
+            isCustom = {{ product.in_stock }} === 0 && {% if product.is_made_to_order %}true{% else %}false{% endif %};
+        }
+
+        // Вызываем обновленную функцию из base.html
+        addToCart(productId, finalTitle, finalPrice, currentMainImage, isCustom, variantId);
     }
 </script>
 {% endblock %}
