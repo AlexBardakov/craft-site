@@ -4,12 +4,6 @@
 
 {% block content %}
 <main>
-    <div style="max-width: 1200px; margin: 0 auto 1.5rem auto;">
-        <a href="/" class="btn" style="background-color: transparent; color: var(--c-text); border-color: var(--c-accent); width: auto; padding: 8px 15px; text-decoration: none; font-size: 0.9rem; display: inline-block;">
-            ← Вернуться в каталог
-        </a>
-    </div>
-
     <div class="product-container">
         <div class="product-gallery">
             <div style="--swiper-navigation-color: var(--c-danger); --swiper-pagination-color: var(--c-danger);" class="swiper main-swiper">
@@ -55,6 +49,11 @@
         </div>
 
         <div class="product-details">
+            <div style="margin-bottom: 0.5rem;">
+                <a href="/" class="btn" style="background-color: transparent; color: var(--c-text); border-color: var(--c-accent); width: auto; padding: 6px 12px; text-decoration: none; font-size: 0.85rem; display: inline-block;">
+                    ← В каталог
+                </a>
+            </div>
             <h1 class="product-title">{{ product.title }}</h1>
 
             <div class="price-status-row">

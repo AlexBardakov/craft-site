@@ -12,6 +12,10 @@
         <img src="/static/images/stamp_custom.png" class="stamp-overlay" alt="На заказ">
         {% endif %}
     </div>
+
+    <div class="product-info">
+        <h3 class="product-title">{{ product.title }}</h3>
+
         <div style="margin-top: auto;">
             {% if product.variants %}
                 <div style="font-size: 0.85rem; color: var(--c-danger); margin-bottom: 5px; font-weight: bold;">
@@ -36,6 +40,7 @@
                 {% endif %}
             {% endif %}
         </div>
+    </div>
 </a>
 {% endmacro %}
 
