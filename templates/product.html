@@ -28,22 +28,17 @@
 
         <div class="product-details">
             <h1 class="product-title">{{ product.title }}</h1>
-            <div class="product-price">{{ product.price }} ₽</div>
-            <div style="margin-bottom: 1.5rem; font-size: 0.95rem;">
-                    {% if product.in_stock > 0 %}
-                    <span style="display: inline-block; padding: 5px 10px; border: 1px solid #4CAF50; color: #2E7D32; border-radius: var(--radius-organic); background: rgba(76, 175, 80, 0.1); font-weight: bold;">
-                        ✓ В наличии: {{ product.in_stock }} шт.
-                    </span>
-                    {% elif product.is_made_to_order %}
-                    <span style="display: inline-block; padding: 5px 10px; border: 1px solid var(--c-accent); color: var(--c-accent); border-radius: var(--radius-organic); background: rgba(102, 155, 188, 0.1); font-weight: bold;">
-                        ⚒ Делается на заказ
-                    </span>
-                    {% else %}
-                    <span style="display: inline-block; padding: 5px 10px; border: 1px solid var(--c-text); color: var(--c-text); border-radius: var(--radius-organic); background: rgba(0, 48, 73, 0.1); font-weight: bold;">
-                        Временно нет в наличии
-                    </span>
-                    {% endif %}
-                </div>
+
+            <div class="price-status-row">
+                <div class="product-price">{{ product.price }} ₽</div>
+                {% if product.in_stock > 0 %}
+                    <span class="status-badge badge-stock">✓ В наличии: {{ product.in_stock }} шт.</span>
+                {% elif product.is_made_to_order %}
+                    <span class="status-badge badge-custom">⚒ Делается на заказ</span>
+                {% else %}
+                    <span class="status-badge badge-empty">Временно нет в наличии</span>
+                {% endif %}
+            </div>
 
             <div class="product-description" style="white-space: pre-wrap;">{{ product.description }}</div>
 
@@ -57,44 +52,40 @@
             </ul>
             {% endif %}
 
-            <div style="margin-top: 1.5rem; background-color: rgba(189, 106, 157, 0.1); padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--text-on-menu);">
-                <h3 style="color: var(--text-on-menu); font-size: 1.2rem; margin-bottom: 0.5rem; font-family: var(--font-main);">Быстрый заказ</h3>
-                <p style="font-size: 0.9rem; margin-bottom: 1rem;">Оставьте свой ник в Telegram или номер телефона, и мы свяжемся с вами для подтверждения заказа.</p>
+            <div class="action-panel">
+                <h3 class="panel-title">Оформление заказа</h3>
+                <p class="panel-desc">Оставьте свой ник в Telegram или номер телефона при оформлении корзины, и мы свяжемся с вами.</p>
 
                 {% if product.in_stock > 0 %}
                     <button class="btn-buy" onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}', false)">
                         Добавить в корзину
                     </button>
-                    {% else %}
-                    <button class="btn-buy" style="border-color: var(--c-danger); color: var(--c-danger);" onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}', true)">
+                {% else %}
+                    <button class="btn-buy btn-custom" onclick="addToCart({{ product.id }}, '{{ product.title }}', {{ product.price }}, '{{ product.image_url }}', true)">
                         Заказать изготовление
                     </button>
-                    <p style="text-align: center; font-size: 0.9rem; margin-top: 10px; opacity: 0.8;">Сроки создания обсуждаются индивидуально</p>
-                    {% endif %}
-
-                <script>
-                function addToCart(id, title, price, image, isCustom) {
-                    let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
-                    let existingItem = cart.find(item => item.id === id);
-
-                    if (existingItem) {
-                        existingItem.quantity += 1;
-                    } else {
-                        // ДОБАВЛЯЕМ ПАРАМЕТР is_custom В ПАМЯТЬ КОРЗИНЫ
-                        cart.push({ id: id, title: title, price: price, image: image, quantity: 1, is_custom: isCustom });
-                    }
-
-                    localStorage.setItem('bureau_cart', JSON.stringify(cart));
-                    updateCartCount();
-
-                    // Меняем текст уведомления
-                    alert(isCustom ? "Товар добавлен в корзину (на изготовление)!" : "Товар добавлен в корзину!");
-                }
-                </script>
+                    <p class="custom-note">Сроки создания обсуждаются индивидуально</p>
+                {% endif %}
             </div>
 
-            <p class="shipping-note" style="margin-top: 1rem;">Изготавливается индивидуально. Отправка в течение 3-5 рабочих дней.</p>
             <p class="shipping-note">Изготавливается индивидуально. Отправка в течение 3-5 рабочих дней.</p>
+
+            <script>
+            function addToCart(id, title, price, image, isCustom) {
+                let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
+                let existingItem = cart.find(item => item.id === id);
+
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({ id: id, title: title, price: price, image: image, quantity: 1, is_custom: isCustom });
+                }
+
+                localStorage.setItem('bureau_cart', JSON.stringify(cart));
+                updateCartCount();
+                alert(isCustom ? "Товар добавлен в корзину (на изготовление)!" : "Товар добавлен в корзину!");
+            }
+            </script>
         </div>
     </div>
 </main>
@@ -103,10 +94,15 @@
 {% block scripts %}
 <script>
     function changeImage(newSrc, element) {
-        // Меняем источник главной картинки
-        document.getElementById('mainImage').src = newSrc;
+        const mainImg = document.getElementById('mainImage');
+        // Добавляем микро-эффект затухания
+        mainImg.style.opacity = '0.6';
 
-        // Переключаем активную рамку у миниатюр
+        setTimeout(() => {
+            mainImg.src = newSrc;
+            mainImg.style.opacity = '1';
+        }, 150);
+
         let thumbnails = document.getElementsByClassName('thumbnail');
         for(let i = 0; i < thumbnails.length; i++) {
             thumbnails[i].classList.remove('active');

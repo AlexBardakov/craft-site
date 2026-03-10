@@ -51,6 +51,8 @@ body {
 h1, h2, h3, h4, h5, h6, .logo {
     font-family: var(--font-heading);
     color: var(--c-heading);
+    font-variant-ligatures: common-ligatures contextual;
+    font-feature-settings: "liga" 1, "clig" 1, "swsh" 1;
 }
 
 button, input, textarea, select {
@@ -61,7 +63,7 @@ button, input, textarea, select {
 /* --- Шапка и Подвал --- */
 header {
     background-color: var(--c-bg);
-    padding: 2rem 5%;
+    padding: 1rem 5%;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -77,6 +79,21 @@ header .logo {
     /* Принудительно включаем лигатуры и завитки (swashes) для браузеров */
     font-variant-ligatures: common-ligatures contextual;
     font-feature-settings: "liga" 1, "clig" 1, "swsh" 1;
+}
+
+/* --- Логотип и Название --- */
+.brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Аккуратный отступ между картинкой и текстом */
+}
+
+.site-logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain; /* Логотип впишется в квадрат 45х45 без искажений */
+    border-radius: var(--radius-organic); /* Добавляем наш фирменный "живой рез" */
+    display: block;
 }
 
 nav a {
@@ -119,19 +136,17 @@ footer {
 .social-icons a:hover { color: var(--c-danger); transform: translateY(-3px); }
 
 /* --- Общий контейнер --- */
-/* --- Общий контейнер (Лист каталога) --- */
 main {
     flex: 1;
     padding: 3rem 4%;
     max-width: 1200px;
-    margin: 2rem auto 4rem auto; /* Отрываем лист от шапки и подвала */
+    margin: 2rem auto 4rem auto;
     width: 95%;
 
-    /* Эффект бумажного листа */
-    background-color: #fff; /* Белый лист на кремовом фоне body */
-    border: 1px solid var(--c-accent);
-    border-radius: var(--radius-organic);
-    box-shadow: 4px 6px 0px rgba(102, 155, 188, 0.3);
+    /* УБРАЛИ БЕЛЫЙ ФОН, РАМКУ И ТЕНЬ */
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
     position: relative;
 }
 
@@ -143,34 +158,33 @@ main {
 
 /* Карточка товара с эффектом паспарту */
 .product-card {
-    background-color: var(--c-bg);
+    background-color: #fff;
     border: 1px solid var(--c-accent);
-    border-radius: var(--radius-organic); /* Живой рез */
+    border-radius: var(--radius-organic);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     text-decoration: none;
     color: inherit;
-    padding: 1.5rem; /* Отступы паспарту */
-    /* Смягченная тень */
-    box-shadow: 2px 3px 0px rgba(102, 155, 188, 0.6);
+    padding: 1rem; /* БЫЛО 1.5rem - делаем рамку тоньше */
+    box-shadow: 2px 3px 0px rgba(102, 155, 188, 0.4);
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
-}
-
-.product-card:hover {
-    transform: translate(-2px, -3px);
-    box-shadow: 4px 6px 0px rgba(193, 18, 31, 0.8); /* Тень оживает при наведении */
-    border-color: var(--c-danger);
 }
 
 .product-image {
     width: 100%;
     aspect-ratio: 1 / 1;
     position: relative;
-    border: 1px solid rgba(102, 155, 188, 0.2);
+    border: none; /* УБРАЛИ РАМКУ ВОКРУГ ФОТО */
     border-radius: var(--radius-organic-alt);
-    background-color: #fff;
-    overflow: hidden; /* Важно, чтобы штамп не вылезал за рамку карточки */
+    background-color: transparent; /* УБРАЛИ БЕЛЫЙ КВАДРАТ ИЗНУТРИ */
+    overflow: hidden;
+}
+
+.product-card:hover {
+    transform: translate(-2px, -3px);
+    box-shadow: 4px 6px 0px rgba(193, 18, 31, 0.8); /* Тень оживает при наведении */
+    border-color: var(--c-danger);
 }
 
 /* --- Главное фото товара (аккуратный квадрат) --- */
@@ -183,14 +197,14 @@ main {
     /* Вычитаем по 5px с каждой стороны (итого 10px) для эффекта паспарту */
     width: calc(100% - 10px);
     height: calc(100% - 10px);
-    object-fit: cover; /* Сохраняем квадрат при разных пропорциях */
+    object-fit: contain; /* Сохраняем квадрат при разных пропорциях */
     border-radius: 2px 3px 2px 4px; /* Живой рез */
     display: block;
     /* Убедись, что фильтры (filter:) для сепии задаются инлайн в HTML, если нужны */
 }
 
 .product-info {
-    padding: 1.5rem 0 0 0;
+    padding: 1rem 0 0 0;
     text-align: center;
     flex: 1;
     display: flex;
@@ -198,8 +212,8 @@ main {
     justify-content: space-between;
 }
 
-.product-title { font-size: 1.3rem; margin-bottom: 0.5rem; }
-.product-price { font-weight: bold; font-size: 1.2rem; margin-bottom: 1.5rem; color: var(--c-text); }
+.product-title { font-size: 1.15rem; margin-bottom: 0.5rem; }
+.product-price { font-weight: bold; font-size: 1.2rem; margin-bottom: 1rem; color: var(--c-text); }
 
 /* Кнопки */
 .btn-order, .btn-buy, .btn {
@@ -231,8 +245,12 @@ main {
 }
 
 /* --- Страница товара --- */
-.product-container { display: flex; gap: 4rem; align-items: flex-start; }
-.product-gallery { flex: 1; display: flex; flex-direction: column; gap: 1.5rem; }
+.product-container {
+    display: flex;
+    gap: 2.5rem; /* БЫЛО 4rem - сделали колонки ближе */
+    align-items: flex-start;
+}
+.product-gallery { flex: 1; display: flex; flex-direction: column; gap: 1rem; }
 
 .main-image {
     width: 100%;
@@ -242,60 +260,89 @@ main {
     border-radius: var(--radius-organic-alt);
     background-color: #fff;
     box-shadow: 2px 3px 0px rgba(102, 155, 188, 0.4);
-    /* Убрали padding отсюда */
 }
 
 .main-image img {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    width: calc(100% - 20px);
-    height: calc(100% - 20px);
-    object-fit: cover;
+    top: 10px; left: 10px;
+    width: calc(100% - 20px); height: calc(100% - 20px);
+    object-fit: contain;
     border-radius: 2px;
+    transition: opacity 0.2s ease-in-out; /* Плавность переключения галереи */
 }
 
-.thumbnail-list { display: flex; gap: 1rem; flex-wrap: wrap; }
+.thumbnail-list { display: flex; gap: 10px; flex-wrap: wrap; }
 .thumbnail {
-    width: 80px; height: 80px;
+    width: 70px; height: 70px; /* Сделали миниатюры чуть аккуратнее */
     position: relative;
     border: 1px solid var(--c-accent);
     border-radius: var(--radius-organic);
     background-color: #fff;
     cursor: pointer;
-    opacity: 0.7;
+    opacity: 0.6;
     transition: all 0.2s;
-    /* Убрали padding отсюда */
 }
-
 .thumbnail img {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: calc(100% - 6px);
-    height: calc(100% - 6px);
-    object-fit: cover;
-    display: block;
-    border-radius: 2px;
+    position: absolute; top: 3px; left: 3px;
+    width: calc(100% - 6px); height: calc(100% - 6px);
+    object-fit: contain; border-radius: 2px;
 }
-.thumbnail:hover, .thumbnail.active { opacity: 1; border-color: var(--c-danger); transform: translateY(-2px); }
+.thumbnail:hover, .thumbnail.active { opacity: 1; border-color: var(--c-heading); transform: translateY(-2px); }
 
-.product-details { flex: 1; display: flex; flex-direction: column; gap: 1.5rem; }
-.product-details .product-title { font-size: 2.5rem; line-height: 1.2; }
-.product-details .product-price { font-size: 1.8rem; font-weight: bold; }
-.product-description { font-size: 1.1rem; }
+/* --- Текстовый блок товара --- */
+.product-details {
+    flex: 1.2; /* Дали тексту чуть больше места */
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem; /* Сжали отступы между абзацами */
+}
+.product-details .product-title { font-size: 2.2rem; line-height: 1.1; margin-bottom: 0; }
+
+.price-status-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.product-details .product-price { font-size: 1.6rem; font-weight: bold; margin-bottom: 0; }
+
+/* Аккуратные бейджи наличия в цветах Мокуханга */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: var(--radius-organic);
+    font-weight: bold;
+    font-size: 0.85rem;
+    border: 1px solid;
+}
+.badge-stock { border-color: var(--c-accent); color: var(--c-text); background: rgba(102, 155, 188, 0.1); }
+.badge-custom { border-color: var(--c-heading); color: var(--c-heading); background: rgba(120, 0, 0, 0.05); }
+.badge-empty { border-color: var(--c-text); color: var(--c-text); background: rgba(0, 48, 73, 0.1); opacity: 0.7; }
+
+.product-description { font-size: 1rem; line-height: 1.6; }
 
 .product-specs {
     list-style: none;
-    padding: 1.5rem;
+    padding: 1.2rem;
     border: 1px solid var(--c-accent);
     border-left: 4px solid var(--c-heading);
     border-radius: var(--radius-organic);
-    background-color: rgba(254, 248, 236, 0.5);
+    background-color: #fff; /* Белый фон для чистоты */
+    box-shadow: 2px 2px 0px rgba(102, 155, 188, 0.2);
 }
-.product-specs li { margin-bottom: 0.5rem; }
-.product-specs strong { color: var(--c-heading); }
+.product-specs li { margin-bottom: 0.3rem; font-size: 0.95rem; }
+.product-specs strong { color: var(--c-text); font-weight: bold; }
 
+/* Панель заказа (как в админке) */
+.action-panel {
+    background-color: #fff;
+    border: 1px solid var(--c-accent);
+    border-radius: var(--radius-organic-alt);
+    padding: 1.5rem;
+    box-shadow: 2px 3px 0px rgba(102, 155, 188, 0.4);
+    margin-top: 0.5rem;
+}
+.action-panel .panel-title { font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--c-heading); }
+.action-panel .panel-desc { font-size: 0.9rem; margin-bottom: 1.2rem; opacity: 0.8; }
+.btn-custom { border-color: var(--c-danger); color: var(--c-danger); }
+.btn-custom:hover { background-color: var(--c-danger); color: #fff; } /* Инверсия при наведении для красной кнопки */
+.custom-note { text-align: center; font-size: 0.85rem; margin-top: 12px; opacity: 0.7; font-style: italic; }
+
+.shipping-note { font-size: 0.85rem; opacity: 0.6; margin-top: 0.5rem; text-align: center; }
 /* --- Инфо-страницы --- */
 .page-title {
     font-size: 2.5rem;
@@ -591,58 +638,49 @@ input:checked + .slider:before { transform: translateX(20px); background-color: 
 }
 
 /* --- Вкладки каталога (Регистры) --- */
+/* --- Вкладки каталога (Ярлычки) --- */
 .notebook-tabs {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     max-width: 1200px;
     margin: 3rem auto 0 auto;
-    padding: 0 5%;
-    align-items: flex-end; /* Чтобы активная вкладка могла "всплыть" чуть выше */
-    overflow-x: auto; /* Для мобильных экранов */
-    scrollbar-width: none; /* Прячем скроллбар */
+    padding: 5px 5% 1.5rem 5%;
+    align-items: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px dashed rgba(102, 155, 188, 0.4); /* Легкая линия, отделяющая фильтры от товаров */
 }
 .notebook-tabs::-webkit-scrollbar { display: none; }
 
 .notebook-tab {
-    background-color: rgba(254, 248, 236, 0.5); /* Полупрозрачный кремовый */
+    background-color: transparent;
     border: 1px solid var(--c-accent);
-    border-bottom: none;
-    padding: 10px 25px;
+    padding: 8px 20px;
     font-family: var(--font-heading);
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: var(--c-accent);
-    border-radius: 12px 20px 0 0; /* Асимметричный срез, как у папки-регистратора */
+    border-radius: var(--radius-organic); /* Теперь углы закруглены со всех сторон */
     cursor: pointer;
     transition: all 0.2s;
-    margin-bottom: -1px; /* Накладываем на рамку листа */
-    position: relative;
-    z-index: 1;
-    white-space: nowrap; /* Чтобы текст не переносился */
+    white-space: nowrap;
 }
 
 .notebook-tab:hover {
     color: var(--c-danger);
-    background-color: #fff;
+    border-color: var(--c-danger);
 }
 
 .notebook-tab.active {
     background-color: #fff;
     color: var(--c-heading);
-    padding-top: 16px; /* Всплывает наверх */
-    z-index: 3;
-    border-color: var(--c-accent);
-    box-shadow: 2px -2px 0px rgba(102, 155, 188, 0.2); /* Тень падает назад */
+    border-color: var(--c-heading);
+    box-shadow: 2px 3px 0px rgba(102, 155, 188, 0.3); /* Легкая тень активного ярлычка */
+    transform: translateY(-2px); /* Чуть приподнимаем активную вкладку */
 }
 
-/* Маскировка линии под активной вкладкой */
+/* УБИРАЕМ маскировку линии, она нам больше не нужна */
 .notebook-tab.active::after {
-    content: "";
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: #fff;
+    display: none;
 }
 
 /* --- Мягкие разделители внутри "Все" --- */

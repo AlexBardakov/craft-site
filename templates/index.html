@@ -25,7 +25,7 @@
 {% endmacro %}
 
 <section style="text-align: center; padding: 3rem 5% 1rem;">
-    <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem; letter-spacing: 1px;">Каталог мерча</h1>
+    <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem;">Каталог мерча</h1>
     <p style="opacity: 0.8; max-width: 600px; margin: 0 auto; font-size: 1.1rem;">
         Авторские фигурки, кейкапы и электроника ручной сборки.
         Каждая деталь напечатана и окрашена с любовью.
@@ -47,9 +47,6 @@
             {% for p in products %}{% if p.category == cat %}{% set ns.has_products = true %}{% endif %}{% endfor %}
 
             {% if ns.has_products %}
-            <div class="category-divider">
-                <span>{{ cat }}</span>
-            </div>
             <div class="catalog">
                 {% for product in products %}
                     {% if product.category == cat %}
@@ -64,7 +61,6 @@
         {% for p in products %}{% if p.category not in categories %}{% set ns_uncat.has_products = true %}{% endif %}{% endfor %}
 
         {% if ns_uncat.has_products %}
-        <div class="category-divider"><span>Прочее</span></div>
         <div class="catalog">
             {% for product in products %}
                 {% if product.category not in categories %}
@@ -82,7 +78,7 @@
         {% for p in products %}{% if p.category == cat %}{% set ns.has_products = true %}{% endif %}{% endfor %}
 
         {% if ns.has_products %}
-        <div class="catalog" style="margin-top: 2rem;">
+        <div class="catalog">
             {% for product in products %}
                 {% if product.category == cat %}
                     {{ render_product_card(product) }}
