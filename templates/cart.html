@@ -16,7 +16,8 @@
             
             <div class="form-group">
                 <label>Ваш Telegram или номер телефона:</label>
-                <input type="text" name="contact" placeholder="@username или +7..." required>
+                <input type="text" name="contact" id="contact" placeholder="Telegram, VK или Email" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); font-size: 1rem; box-sizing: border-box;"
+                value="{{ user.phone if user and user.phone else (user.email if user else '') }}">
             </div>
             
             <div class="form-group">

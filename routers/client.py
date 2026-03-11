@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Form, status, JSONResponse
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
+from routers.customer import get_current_user
+from delivery_service import calculate_delivery_cost
 
 import models
 from database import get_db
@@ -60,5 +62,28 @@ async def read_product(request: Request, product_id: int,
 
 
 @router.get("/cart", response_class=HTMLResponse)
-async def read_cart(request: Request):
-    return templates.TemplateResponse("cart.html", {"request": request})
+async def cart_page(request: Request, db: Session = Depends(get_db)):
+    # Пытаемся получить авторизованного пользователя
+    user = get_current_user(request, db)
+    # Передаем переменную user в шаблон
+    return templates.TemplateResponse("cart.html", {"request": request, "user": user})
+
+
+@router.post("/api/calculate-delivery")
+async def api_calculate_delivery(
+        city: str = Form(""),
+        method: str = Form("Почта России")
+):
+    # Если город еще не ввели, возвращаем базовые цены
+    if not city or len(city) < 2:
+        default_cost = 350 if method == "Почта России" else 500
+        return JSONResponse({"cost": default_cost})
+
+    try:
+        # Обращаемся к нашему сервису (и API СДЭК)
+        cost = await calculate_delivery_cost(city, method)
+        return JSONResponse({"cost": cost})
+    except Exception as e:
+        print(f"Ошибка API расчета: {e}")
+        return JSONResponse(
+            {"cost": 500})  # Отдаем базовый тариф при сбоях сети

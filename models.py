@@ -68,6 +68,10 @@ class Order(Base):
     payment_url = Column(String, nullable=True)  # Ссылка на оплату (СБП)
     is_paid = Column(Boolean, default=False)  # Флаг успешной оплаты
 
+    delivery_method = Column(String, default="Почта России")
+    delivery_cost = Column(Integer, default=350)
+    delivery_address = Column(String)  # Адрес теперь будет всегда
+
     items = relationship("OrderItem", backref="order")
 
 

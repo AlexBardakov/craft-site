@@ -5,6 +5,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 import httpx
 from dotenv import load_dotenv
+from routers.customer import get_current_user
 
 import models
 from database import get_db
@@ -19,10 +20,15 @@ ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 
 @router.post("/order")
 async def process_order(
+        request: Request,
         cart_data: str = Form(...),
         # Теперь принимаем строку с JSON-данными корзины
         contact: str = Form(...),
         comment: str = Form(""),  # Комментарий теперь тоже сохраняем
+
+        delivery_method: str = Form("Почта России"),
+        delivery_address: str = Form(...),
+
         db: Session = Depends(get_db)
 ):
     # 1. Расшифровываем JSON строку обратно в список товаров
@@ -34,6 +40,8 @@ async def process_order(
     if not cart:
         # Если корзина по какой-то причине пуста, возвращаем обратно
         return RedirectResponse(url="/cart", status_code=303)
+
+    user = get_current_user(request, db)
 
     # 2. Считаем итоговую сумму и формируем красивый текст для чека
     items_text = ""
@@ -55,7 +63,9 @@ async def process_order(
 
     # 3. Сохраняем заказ в НАШУ БАЗУ ДАННЫХ (в новые таблицы Order)
     new_order = models.Order(
+        customer_id=user.id if user else None,
         customer_contact=contact,
+        customer_name=user.name if user else "",
         total_price=total_price,
         comment=comment,
         status="Новый"

@@ -1,6 +1,6 @@
 import os
+import bcrypt
 from datetime import datetime, timedelta
-from passlib.context import CryptContext
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 
@@ -11,14 +11,19 @@ SECRET_KEY = os.getenv("SECRET_KEY", "super_secret_buro_key_123")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # Токен живет 7 дней
 
-# Настройка хеширования
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    # Проверяем совпадение пароля
+    return bcrypt.checkpw(
+        plain_password.encode('utf-8'),
+        hashed_password.encode('utf-8')
+    )
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
+def get_password_hash(password: str) -> str:
+    # Генерируем соль и хешируем пароль напрямую через bcrypt
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed_password.decode('utf-8')  # Возвращаем строку для записи в БД
 
 def create_access_token(data: dict):
     to_encode = data.copy()
