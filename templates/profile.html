@@ -5,12 +5,12 @@
 {% block content %}
 <main style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
 
-    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--c-accent); padding-bottom: 1.5rem; margin-bottom: 2.5rem; gap: 1rem;">
-        <h1 class="page-title" style="margin: 0; text-align: left;">Привет, {{ user.name or user.email }}!</h1>
-        <a href="/logout" class="btn" style="background: transparent; color: var(--c-text); border: 1px solid var(--c-danger); padding: 8px 20px; font-size: 0.95rem;">Выйти</a>
-    </div>
+    <h1 class="page-title" style="margin-top: 0; margin-bottom: 2rem; text-align: left;">Привет, {{ user.name or user.email }}!</h1>
 
-    <h2 style="margin-bottom: 1.5rem; color: var(--c-heading);">История заказов</h2>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+        <h2 style="margin: 0; color: var(--c-heading);">История заказов</h2>
+        <a href="/logout" class="btn" style="background: transparent; color: var(--c-text); border: 1px solid var(--c-danger); padding: 8px 20px; font-size: 0.95rem; width: auto; margin-left: auto;">Выйти</a>
+    </div>
 
     {% if orders %}
         <div style="display: flex; flex-direction: column; gap: 2rem;">
@@ -32,7 +32,11 @@
                     <ul class="styled-list" style="margin: 0; padding-left: 1.2rem;">
                         {% for item in order.items %}
                             <li style="margin-bottom: 0.3rem;">
-                                <b>{{ item.product_name }}</b> (x{{ item.quantity }}) — {{ item.price * item.quantity }} ₽
+                                <b>{{ item.product.title }}</b>
+                                {% if item.variant_name %}
+                                    <span style="opacity: 0.8; font-size: 0.9em;">({{ item.variant_name }})</span>
+                                {% endif %}
+                                (x{{ item.quantity }}) — {{ item.price_at_order * item.quantity }} ₽
                             </li>
                         {% endfor %}
                     </ul>
