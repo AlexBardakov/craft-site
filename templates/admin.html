@@ -147,7 +147,12 @@
 
     <div id="tab-orders" class="tab-content" style="display: none;">
         <div class="panel" style="overflow-x: auto;">
-            <h2>Список заказов</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="margin: 0;">Список заказов</h2>
+                <a href="/admin/export/orders" class="btn" style="background-color: var(--c-accent); color: #fff; width: auto; text-decoration: none; padding: 10px 20px; font-size: 0.9rem; box-shadow: 2px 2px 0px rgba(0, 48, 73, 0.2);">
+                    📥 Скачать отчет (Excel)
+                </a>
+            </div>
             <table>
                 <thead>
                     <tr>

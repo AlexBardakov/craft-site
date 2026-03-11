@@ -2,11 +2,13 @@ import os
 import shutil
 import secrets
 import math
+import csv
+import io
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from typing import List, Optional
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, HTTPException, status
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
@@ -400,3 +402,57 @@ async def edit_product_variant(
         db.commit()
 
     return RedirectResponse(url=f"/admin/edit/{product_id}", status_code=303)
+
+
+# --- ЭКСПОРТ В EXCEL / CSV ---
+@router.get("/admin/export/orders")
+async def export_orders(db: Session = Depends(get_db),
+                        admin: str = Depends(get_current_admin)):
+    # Получаем все заказы из базы, самые новые сверху
+    orders = db.query(models.Order).order_by(models.Order.id.desc()).all()
+
+    # Создаем виртуальный файл в памяти
+    output = io.StringIO()
+    # Excel любит разделитель ";" в русской локали
+    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+
+    # Пишем заголовки колонок
+    writer.writerow([
+        "№ Заказа", "Дата", "Статус", "Контакты",
+        "Состав заказа", "Комментарий", "Сумма (руб)"
+    ])
+
+    # Заполняем строчки данными
+    for order in orders:
+        # Форматируем дату красиво
+        date_str = order.created_at.strftime(
+            "%Y-%m-%d %H:%M") if order.created_at else ""
+
+        # Собираем список купленных товаров в одну строку
+        items_str_list = []
+        for item in order.items:
+            product_title = item.product.title if item.product else "Удаленный товар"
+            variant_info = f" ({item.variant_name})" if item.variant_name else ""
+            items_str_list.append(
+                f"{product_title}{variant_info} x{item.quantity}")
+        items_str = " | ".join(items_str_list)
+
+        writer.writerow([
+            order.id,
+            date_str,
+            order.status,
+            order.customer_contact,
+            items_str,
+            order.comment,
+            order.total_price
+        ])
+
+    # Кодируем в UTF-8-SIG (с BOM), чтобы Excel 100% правильно понял кириллицу
+    encoded_csv = output.getvalue().encode('utf-8-sig')
+
+    return Response(
+        content=encoded_csv,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="buro_orders_export.csv"'}
+    )

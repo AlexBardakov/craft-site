@@ -169,6 +169,7 @@ main {
     padding: 1rem; /* БЫЛО 1.5rem - делаем рамку тоньше */
     box-shadow: 2px 3px 0px rgba(102, 155, 188, 0.4);
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+    will-change: transform, box-shadow;
 }
 
 .product-image {
@@ -182,9 +183,8 @@ main {
 }
 
 .product-card:hover {
-    transform: translate(-2px, -3px);
-    box-shadow: 4px 6px 0px rgba(193, 18, 31, 0.8); /* Тень оживает при наведении */
-    border-color: var(--c-danger);
+    transform: translateY(-4px) translateX(-2px) !important;/* Плавно выдвигаем карточку вперед и чуть вверх */
+    box-shadow: 4px 5px 0px rgba(102, 155, 188, 0.4); /* Удлиняем оригинальную синюю тень, чтобы создать эффект высоты, без изменения цвета */
 }
 
 /* --- Главное фото товара (аккуратный квадрат) --- */
@@ -252,31 +252,47 @@ main {
 }
 .product-gallery {
     flex: 1;
-    min-width: 0; /* Важный фикс, чтобы слайдер не ломал флекс-сетку */
+    min-width: 0; /* Важный фикс для Swiper */
+    width: 100%; /* ЗАЩИТА: не даем колонке стать шире экрана на мобилке */
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
-
+/* --- Главный квадратный слайдер --- */
 .main-swiper {
     width: 100%;
+    max-width: 100%; /* ЗАЩИТА от гигантизма */
     aspect-ratio: 1 / 1;
     border: 1px solid var(--c-accent);
     border-radius: var(--radius-organic-alt);
     background-color: #fff;
     box-shadow: 2px 3px 0px rgba(102, 155, 188, 0.4);
-    overflow: hidden;
+    overflow: hidden; /* Обрезаем всё, что пытается вылезти за рамки */
 }
 
+/* Жестко ограничиваем высоту обертки слайдера */
+.main-swiper .swiper-wrapper {
+    height: 100% !important;
+}
+
+/* Слайд центрирует картинку и дает ей "воздух" (паспарту) */
 .main-swiper .swiper-slide {
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 10px; /* Внутренний отступ вместо сложных calc() */
+    box-sizing: border-box;
 }
 
+/* Сама картинка мягко вписывается в слайд */
 .main-swiper img {
-    width: calc(100% - 20px);
-    height: calc(100% - 20px);
+    width: 100%;
+    height: 100%;
+    max-width: 100%; /* Не даем картинке растянуть слайд */
+    max-height: 100%;
     object-fit: contain;
     border-radius: 2px;
 }
@@ -898,4 +914,63 @@ input:checked + .slider:before { transform: translateX(20px); background-color: 
 }
 ::-webkit-scrollbar-thumb:hover {
     background-color: var(--c-accent); /* Голубой пигмент при наведении */
+}
+
+/* --- Залипающая панель покупки (Мобильная версия) --- */
+.sticky-cart-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--c-bg);
+    border-top: 2px solid var(--c-accent);
+    padding: 10px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1001; /* Поверх всего */
+    box-shadow: 0 -4px 10px rgba(0, 48, 73, 0.1);
+
+    /* Прячем вниз по умолчанию */
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.sticky-cart-panel.show {
+    transform: translateY(0);
+}
+
+.sticky-cart-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.sticky-cart-info .product-title {
+    font-size: 0.85rem;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px; /* Обрезаем слишком длинные названия */
+    font-family: var(--font-main);
+}
+
+.sticky-cart-info .product-price {
+    font-size: 1.1rem;
+    color: var(--c-heading);
+    font-weight: bold;
+    margin: 0;
+}
+
+.sticky-cart-panel .btn-buy {
+    width: auto;
+    padding: 8px 20px;
+    box-shadow: 2px 2px 0px var(--c-accent);
+}
+
+/* На десктопах эта панель не нужна */
+@media (min-width: 769px) {
+    .sticky-cart-panel {
+        display: none !important;
+    }
 }

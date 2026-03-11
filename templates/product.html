@@ -6,6 +6,13 @@
 <main>
     <div class="product-container">
         <div class="product-gallery">
+
+            <div style="margin-bottom: 1rem;">
+                <a href="/" class="btn" style="background-color: transparent; color: var(--c-text); border-color: var(--c-accent); width: auto; padding: 6px 12px; text-decoration: none; font-size: 0.85rem; display: inline-block;">
+                    ← В каталог
+                </a>
+            </div>
+
             <div style="--swiper-navigation-color: var(--c-danger); --swiper-pagination-color: var(--c-danger);" class="swiper main-swiper">
                 <div class="swiper-wrapper">
                     <div class="swiper-slide"><img src="{{ product.image_url }}" alt="{{ product.title }}"></div>
@@ -49,11 +56,6 @@
         </div>
 
         <div class="product-details">
-            <div style="margin-bottom: 0.5rem;">
-                <a href="/" class="btn" style="background-color: transparent; color: var(--c-text); border-color: var(--c-accent); width: auto; padding: 6px 12px; text-decoration: none; font-size: 0.85rem; display: inline-block;">
-                    ← В каталог
-                </a>
-            </div>
             <h1 class="product-title">{{ product.title }}</h1>
 
             <div class="price-status-row">
@@ -113,34 +115,24 @@
             </div>
 
             <p class="shipping-note">Изготавливается индивидуально. Отправка в течение 3-5 рабочих дней.</p>
-            </div>
+        </div>
     </div>
 </main>
+<div id="sticky-cart-panel" class="sticky-cart-panel">
+    <div class="sticky-cart-info">
+        <h4 class="product-title">{{ product.title }}</h4>
+        <p class="product-price" id="sticky-price">{{ product.price }} ₽</p>
+    </div>
+    <button id="btn-sticky-add" class="btn-buy" onclick="addCurrentToCart()">В корзину</button>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    function changeImage(newSrc, element) {
-        const mainImg = document.getElementById('mainImage');
-        // Добавляем микро-эффект затухания
-        mainImg.style.opacity = '0.6';
-
-        setTimeout(() => {
-            mainImg.src = newSrc;
-            mainImg.style.opacity = '1';
-        }, 150);
-
-        let thumbnails = document.getElementsByClassName('thumbnail');
-        for(let i = 0; i < thumbnails.length; i++) {
-            thumbnails[i].classList.remove('active');
-        }
-        element.classList.add('active');
-    }
-
     // Инициализация миниатюр
     var thumbsSwiper = new Swiper(".thumbs-swiper", {
         spaceBetween: 10,
-        slidesPerView: 4, // Количество миниатюр в ряду
+        slidesPerView: 4,
         freeMode: true,
         watchSlidesProgress: true,
     });
@@ -165,74 +157,81 @@
 
     // Функция переключения вариаций
     function updateVariant(radio) {
-        // Меняем стили у всех кнопок (сброс)
         document.querySelectorAll('.variant-label').forEach(lbl => {
             lbl.style.background = 'transparent';
             lbl.style.boxShadow = 'none';
             lbl.style.borderColor = 'var(--c-accent)';
         });
 
-        // Выделяем нажатую кнопку
         radio.parentElement.style.background = 'rgba(254, 248, 236, 0.8)';
         radio.parentElement.style.boxShadow = '2px 3px 0px rgba(102, 155, 188, 0.4)';
         radio.parentElement.style.borderColor = 'var(--c-heading)';
 
-        // 1. Обновляем цену
+        // 1. Обновляем цену (везде)
         const modifier = parseInt(radio.getAttribute('data-modifier')) || 0;
-        document.getElementById('display-price').innerText = (basePrice + modifier) + ' ₽';
+        const newPrice = (basePrice + modifier) + ' ₽';
+        document.getElementById('display-price').innerText = newPrice;
+        if(document.getElementById('sticky-price')) {
+            document.getElementById('sticky-price').innerText = newPrice;
+        }
 
-        // 2. Обновляем статус и кнопку корзины
+        // 2. Обновляем статус и кнопки корзины
         const stock = parseInt(radio.getAttribute('data-stock')) || 0;
         const isCustom = radio.getAttribute('data-custom') === 'true';
         const statusBox = document.getElementById('display-status');
         const btn = document.getElementById('btn-add-to-cart');
+        const stickyBtn = document.getElementById('btn-sticky-add');
         const note = document.getElementById('custom-note');
 
         if (stock > 0) {
             statusBox.innerHTML = `<span class="status-badge badge-stock">✓ В наличии: ${stock} шт.</span>`;
-            btn.innerText = "Добавить в корзину";
-            btn.className = "btn-buy";
-            btn.disabled = false;
+
+            btn.innerText = "Добавить в корзину"; btn.className = "btn-buy"; btn.disabled = false;
+            btn.style.borderColor = 'var(--c-accent)'; btn.style.color = 'var(--c-accent)';
+
+            if(stickyBtn) {
+                stickyBtn.innerText = "В корзину"; stickyBtn.className = "btn-buy"; stickyBtn.disabled = false;
+                stickyBtn.style.borderColor = 'var(--c-accent)'; stickyBtn.style.color = 'var(--c-accent)';
+            }
             note.style.display = 'none';
         } else if (isCustom) {
             statusBox.innerHTML = `<span class="status-badge badge-custom">⚒ Делается на заказ</span>`;
-            btn.innerText = "Заказать изготовление";
-            btn.className = "btn-buy btn-custom";
-            btn.disabled = false;
+
+            btn.innerText = "Заказать изготовление"; btn.className = "btn-buy btn-custom"; btn.disabled = false;
+            if(stickyBtn) {
+                stickyBtn.innerText = "Заказать"; stickyBtn.className = "btn-buy btn-custom"; stickyBtn.disabled = false;
+            }
             note.style.display = 'block';
         } else {
             statusBox.innerHTML = `<span class="status-badge badge-empty">Временно нет в наличии</span>`;
-            btn.innerText = "Нет в наличии";
-            btn.className = "btn-buy";
-            btn.disabled = true;
-            note.style.display = 'none';
-            // Делаем кнопку серой
+
+            btn.innerText = "Нет в наличии"; btn.className = "btn-buy"; btn.disabled = true;
             btn.style.borderColor = 'gray'; btn.style.color = 'gray';
+
+            if(stickyBtn) {
+                stickyBtn.innerText = "Нет в наличии"; stickyBtn.disabled = true;
+                stickyBtn.style.borderColor = 'gray'; stickyBtn.style.color = 'gray';
+            }
+            note.style.display = 'none';
         }
 
-        // 3. Умное переключение картинки через Swiper (Решение пункта 3)
+        // 3. Умное переключение картинки через Swiper
         const newImg = radio.getAttribute('data-image');
         if (newImg && newImg !== 'None' && newImg !== '') {
             currentMainImage = newImg;
-
-            // Ищем все картинки внутри главного слайдера
             const slides = document.querySelectorAll('.main-swiper .swiper-slide img');
             let targetIndex = 0;
 
-            // Находим индекс слайда, который совпадает с фото вариации
             slides.forEach((img, index) => {
-                // getAttribute('src') берет относительный путь
                 if (img.getAttribute('src') === newImg) {
                     targetIndex = index;
                 }
             });
 
-            // Если у нас инициализирован Swiper, командуем ему перелистнуть
             if (typeof mainSwiper !== 'undefined') {
                 mainSwiper.slideTo(targetIndex);
             }
         } else {
-            // Если у вариации нет своего фото, возвращаемся на первую (базовую) картинку
             currentMainImage = "{{ product.image_url }}";
             if (typeof mainSwiper !== 'undefined') {
                 mainSwiper.slideTo(0);
@@ -240,8 +239,9 @@
         }
     }
 
-    // Инициализация (автоматически выбираем первую вариацию при загрузке страницы)
+    // ЕДИНЫЙ блок инициализации при загрузке страницы
     document.addEventListener('DOMContentLoaded', () => {
+        // А. Логика первичного выбора варианта или статуса простого товара
         if (hasVariants) {
             const firstRadio = document.querySelector('input[name="variant"]');
             if (firstRadio) {
@@ -249,19 +249,38 @@
                 updateVariant(firstRadio);
             }
         } else {
-            // Логика для простых товаров без вариаций
             const btn = document.getElementById('btn-add-to-cart');
+            const stickyBtn = document.getElementById('btn-sticky-add');
             const inStock = {{ product.in_stock }};
             const isMadeToOrder = {% if product.is_made_to_order %}true{% else %}false{% endif %};
+
             if (inStock === 0 && isMadeToOrder) {
-                btn.innerText = "Заказать изготовление";
-                btn.className = "btn-buy btn-custom";
+                btn.innerText = "Заказать изготовление"; btn.className = "btn-buy btn-custom";
+                if(stickyBtn) { stickyBtn.innerText = "Заказать"; stickyBtn.className = "btn-buy btn-custom"; }
                 document.getElementById('custom-note').style.display = 'block';
             } else if (inStock === 0 && !isMadeToOrder) {
-                btn.innerText = "Нет в наличии";
-                btn.disabled = true;
+                btn.innerText = "Нет в наличии"; btn.disabled = true;
                 btn.style.borderColor = 'gray'; btn.style.color = 'gray';
+                if(stickyBtn) { stickyBtn.innerText = "Нет в наличии"; stickyBtn.disabled = true; stickyBtn.style.borderColor = 'gray'; stickyBtn.style.color = 'gray'; }
             }
+        }
+
+        // Б. Логика появления залипающей панели
+        const actionPanel = document.querySelector('.action-panel');
+        const stickyPanel = document.getElementById('sticky-cart-panel');
+
+        if (actionPanel && stickyPanel) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+                        stickyPanel.classList.add('show');
+                    } else {
+                        stickyPanel.classList.remove('show');
+                    }
+                });
+            }, { threshold: 0 });
+
+            observer.observe(actionPanel);
         }
     });
 
@@ -289,7 +308,6 @@
             isCustom = {{ product.in_stock }} === 0 && {% if product.is_made_to_order %}true{% else %}false{% endif %};
         }
 
-        // Вызываем обновленную функцию из base.html
         addToCart(productId, finalTitle, finalPrice, currentMainImage, isCustom, variantId);
     }
 </script>
