@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Заказ принят | SeaOddity{% endblock %}
+{% block title %}Заказ принят | Бюро Кошачье{% endblock %}
 
 {% block content %}
-<main style="display: flex; align-items: center; justify-content: center; min-height: 50vh;">
-    <div style="text-align: center; background-color: rgba(189, 106, 157, 0.05); padding: 3rem; border-radius: 12px; border: 1px solid rgba(122, 163, 152, 0.2); max-width: 600px;">
-        <h1 style="color: var(--text-on-menu); font-size: 2.5rem; margin-bottom: 1rem;">Спасибо за заказ! 🐙</h1>
-        <p style="font-size: 1.2rem; margin-bottom: 2rem;">Ваша заявка успешно отправлена. Мы скоро свяжемся с вами в Telegram или по телефону для подтверждения деталей.</p>
-        <a href="/" class="btn-buy" style="text-decoration: none; display: inline-block;">Вернуться в каталог</a>
+<main style="display: flex; align-items: center; justify-content: center; min-height: 50vh; padding: 2rem 1rem;">
+    <div style="text-align: center; background-color: rgba(102, 155, 188, 0.05); padding: 3rem; border-radius: var(--radius-organic-alt, 15px); border: 1px solid var(--c-accent); max-width: 600px;">
+        <h1 style="color: var(--c-heading); font-size: 2.5rem; margin-bottom: 1rem;">Спасибо за заказ! 🐾</h1>
+        <p style="font-size: 1.1rem; margin-bottom: 2rem; color: var(--c-text); line-height: 1.5;">
+            Ваша заявка успешно отправлена в бюро. Мы скоро свяжемся с вами в мессенджере или по телефону для подтверждения всех деталей, нюансов изготовления и точной стоимости доставки.
+        </p>
+        <a href="/" class="btn" style="text-decoration: none; display: inline-block; padding: 12px 25px; border-radius: 4px;">Вернуться в каталог</a>
     </div>
 </main>
 {% endblock %}

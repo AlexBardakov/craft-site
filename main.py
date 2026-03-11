@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
-from routers import client, admin, order, customer # Добавили customer
+from routers import client, admin, order, customer
 
 import models
 from database import engine

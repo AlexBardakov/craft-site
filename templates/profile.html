@@ -3,63 +3,79 @@
 {% block title %}Личный кабинет | Бюро Кошачье{% endblock %}
 
 {% block content %}
-<div class="profile-container" style="max-width: 800px; margin: 0 auto; padding-top: 2rem;">
+<main style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
 
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--c-accent); padding-bottom: 1rem; margin-bottom: 2rem;">
-        <h1 style="color: var(--c-heading); margin: 0;">Привет, {{ user.name or user.email }}!</h1>
-        <a href="/logout" class="btn" style="background: transparent; color: var(--c-text); border: 1px solid var(--c-danger); padding: 5px 15px; font-size: 0.9rem;">Выйти</a>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--c-accent); padding-bottom: 1.5rem; margin-bottom: 2.5rem; gap: 1rem;">
+        <h1 class="page-title" style="margin: 0; text-align: left;">Привет, {{ user.name or user.email }}!</h1>
+        <a href="/logout" class="btn" style="background: transparent; color: var(--c-text); border: 1px solid var(--c-danger); padding: 8px 20px; font-size: 0.95rem;">Выйти</a>
     </div>
 
-    <h2 style="margin-bottom: 1.5rem;">История заказов</h2>
+    <h2 style="margin-bottom: 1.5rem; color: var(--c-heading);">История заказов</h2>
 
     {% if orders %}
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
         {% for order in orders %}
-            <div class="panel" style="border: 1px solid var(--c-accent); padding: 1.5rem; border-radius: var(--radius-organic); position: relative;">
+            <div class="panel" style="background: var(--c-surface); border: 1px solid var(--c-accent); padding: 1.5rem; border-radius: var(--radius-organic-alt); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
 
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; border-bottom: 1px solid rgba(102, 155, 188, 0.2); padding-bottom: 1rem;">
                     <div>
-                        <h3 style="margin: 0 0 5px 0; color: var(--c-heading);">Заказ #{{ order.id }}</h3>
-                        <span style="font-size: 0.9rem; opacity: 0.7;">от {{ order.created_at.strftime('%d.%m.%Y') if order.created_at else 'неизвестно' }}</span>
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--c-heading); font-size: 1.2rem;">Заказ #{{ order.id }}</h3>
+                        <span style="font-size: 0.85rem; opacity: 0.6;">от {{ order.created_at.strftime('%d.%m.%Y') if order.created_at else 'Неизвестно' }}</span>
                     </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; color: var(--c-text);">{{ order.total_price }} ₽</div>
-                        <span style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; background: rgba(102, 155, 188, 0.2); border: 1px dashed var(--c-accent); color: var(--c-text);">{{ order.status }}</span>
+                    <div style="background: rgba(102, 155, 188, 0.1); color: var(--c-heading); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid var(--c-accent);">
+                        {{ order.status }}
                     </div>
                 </div>
 
-                <div style="background: var(--c-bg); padding: 1rem; border-radius: var(--radius-organic-alt); margin-bottom: 1rem; border: 1px solid rgba(102, 155, 188, 0.3);">
-                    <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.95rem;">
-                    {% for item in order.items %}
-                        <li style="margin-bottom: 5px;">
-                            {{ item.product.title if item.product else 'Удаленный товар' }}
-                            <span style="opacity: 0.7;">(x{{ item.quantity }})</span>
-                        </li>
-                    {% endfor %}
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; opacity: 0.8;">Состав заказа:</h4>
+                    <ul class="styled-list" style="margin: 0; padding-left: 1.2rem;">
+                        {% for item in order.items %}
+                            <li style="margin-bottom: 0.3rem;">
+                                <b>{{ item.product_name }}</b> (x{{ item.quantity }}) — {{ item.price * item.quantity }} ₽
+                            </li>
+                        {% endfor %}
                     </ul>
                 </div>
 
-                <div style="display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid rgba(102, 155, 188, 0.2); padding-top: 1rem;">
+                <div style="background: rgba(102, 155, 188, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <span style="opacity: 0.7; min-width: 80px;">Доставка:</span>
+                        <b style="text-align: right;">{{ order.delivery_method }} ({{ order.delivery_cost }} ₽)</b>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem;">
+                        <span style="opacity: 0.7; min-width: 80px;">Адрес:</span>
+                        <b style="text-align: right; flex: 1; min-width: 150px; word-break: break-word;">{{ order.delivery_address }}</b>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; border-top: 1px solid rgba(102, 155, 188, 0.2); padding-top: 1.5rem; gap: 1rem;">
+                    <div style="font-size: 1.2rem; color: var(--c-heading);">
+                        Итого: <b>{{ order.total_price }} ₽</b>
+                    </div>
+
+                    <div>
                     {% if order.is_paid %}
-                        <span style="color: var(--c-danger); font-weight: bold; border: 2px solid var(--c-danger); padding: 4px 12px; border-radius: 4px; transform: rotate(-3deg); display: inline-block; font-size: 1.1rem;">ОПЛАЧЕНО</span>
+                        <span style="color: var(--c-danger); font-weight: bold; border: 2px solid var(--c-danger); padding: 6px 15px; border-radius: 4px; transform: rotate(-3deg); display: inline-block; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;">Оплачено</span>
                     {% elif order.payment_url %}
-                        <a href="{{ order.payment_url }}" target="_blank" class="btn" style="background: var(--c-danger); color: white; text-decoration: none;">Оплатить заказ (СБП)</a>
+                        <a href="{{ order.payment_url }}" target="_blank" class="btn" style="background: var(--c-danger); color: white; text-decoration: none; padding: 10px 20px; display: inline-block;">Оплатить (СБП)</a>
                     {% else %}
-                        <span style="font-size: 0.9rem; opacity: 0.7; font-style: italic;">Ожидает проверки и выставления счета...</span>
+                        <span style="font-size: 0.9rem; opacity: 0.7; font-style: italic; background: rgba(0,0,0,0.03); padding: 6px 12px; border-radius: 4px; display: inline-block;">Ожидает проверки...</span>
                     {% endif %}
+                    </div>
                 </div>
 
             </div>
         {% endfor %}
         </div>
     {% else %}
-        <div class="panel" style="text-align: center; padding: 4rem 1rem; border: 1px dashed var(--c-accent);">
-            <div style="font-size: 3.5rem; margin-bottom: 1rem;">🐈💤</div>
-            <h3 style="color: var(--c-heading);">У вас пока нет заказов</h3>
-            <p style="opacity: 0.8; margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto;">Здесь уютно спит кот Чип. Сделайте свой первый заказ, чтобы его разбудить!</p>
-            <a href="/#catalog" class="btn">Перейти в каталог</a>
+        <div class="panel" style="text-align: center; padding: 4rem 1rem; border: 2px dashed var(--c-accent); border-radius: var(--radius-organic);">
+            <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.8;">🐈💤</div>
+            <h3 style="color: var(--c-heading); font-size: 1.5rem; margin-bottom: 0.5rem;">У вас пока нет заказов</h3>
+            <p style="opacity: 0.8; margin-bottom: 1.5rem;">Самое время заглянуть в каталог и найти что-то особенное.</p>
+            <a href="/#catalog" class="btn" style="display: inline-block;">Перейти в каталог</a>
         </div>
     {% endif %}
 
-</div>
+</main>
 {% endblock %}

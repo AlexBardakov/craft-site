@@ -3,55 +3,107 @@
 {% block title %}Вход и Регистрация | Бюро Кошачье{% endblock %}
 
 {% block content %}
-<div class="login-container" style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; margin-top: 2rem;">
+<main style="padding: 2rem 1rem;">
+    <h1 class="page-title">Личный кабинет</h1>
 
-    <div class="panel" style="flex: 1; min-width: 300px; max-width: 400px;">
-        <h2 style="color: var(--c-heading); border-bottom: 2px solid var(--c-accent); padding-bottom: 10px;">Вход</h2>
+    <div style="max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
 
-        {% if request.query_params.error == 'wrong_credentials' %}
-            <div style="color: var(--c-danger); margin-bottom: 15px; font-size: 0.9rem; font-weight: bold;">Неверный email или пароль.</div>
-        {% endif %}
+        <div class="panel" style="align-self: flex-start; width: 85%; cursor: pointer; border-radius: 15px 15px 15px 0; border: 2px solid var(--c-accent); padding: 1.5rem; transition: background 0.2s;" onclick="toggleForm('login-form', 'login-icon')">
+            <h2 style="margin: 0; color: var(--c-heading); display: flex; justify-content: space-between; align-items: center; font-size: 1.3rem;">
+                <span>У меня уже есть профиль</span>
+                <span id="login-icon" style="font-size: 0.9rem; opacity: 0.6;">▼</span>
+            </h2>
 
-        <form action="/login" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
-            <div>
-                <label style="font-weight: bold; font-size: 0.9rem;">Email</label>
-                <input type="email" name="email" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+            <div id="login-form" style="display: none; margin-top: 15px; border-top: 1px dashed var(--c-accent); padding-top: 15px;" onclick="event.stopPropagation()">
+                {% if request.query_params.error == 'wrong_credentials' %}
+                    <div style="color: var(--c-danger); margin-bottom: 15px; font-size: 0.9rem; font-weight: bold;">Неверный email или пароль.</div>
+                {% endif %}
+
+                <form action="/login" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9rem;">Email</label>
+                        <input type="email" name="email" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9rem;">Пароль</label>
+                        <input type="password" name="password" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Войти</button>
+                </form>
+
+                <div style="margin-top: 15px; text-align: right;">
+                    <a href="/forgot-password" style="font-size: 0.85rem; color: var(--text-on-menu); opacity: 0.8;">Забыли пароль?</a>
+                </div>
             </div>
-            <div>
-                <label style="font-weight: bold; font-size: 0.9rem;">Пароль</label>
-                <input type="password" name="password" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+        </div>
+
+        <div class="panel" style="align-self: flex-end; width: 85%; cursor: pointer; background: rgba(102, 155, 188, 0.05); border-radius: 15px 15px 0 15px; border: 1px solid var(--c-accent); padding: 1.5rem; transition: background 0.2s;" onclick="toggleForm('register-form', 'register-icon')">
+            <h2 style="margin: 0; color: var(--c-heading); display: flex; justify-content: space-between; align-items: center; font-size: 1.3rem;">
+                <span>Я здесь впервые</span>
+                <span id="register-icon" style="font-size: 0.9rem; opacity: 0.6;">▼</span>
+            </h2>
+
+            <div id="register-form" style="display: none; margin-top: 15px; border-top: 1px dashed var(--c-accent); padding-top: 15px;" onclick="event.stopPropagation()">
+                {% if request.query_params.error == 'email_exists' %}
+                    <div style="color: var(--c-danger); margin-bottom: 15px; font-size: 0.9rem; font-weight: bold;">Такой email уже зарегистрирован.</div>
+                {% endif %}
+
+                <form action="/register" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9rem;">Email *</label>
+                        <input type="email" name="email" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9rem;">Пароль *</label>
+                        <input type="password" name="password" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9rem;">Имя (как к вам обращаться)</label>
+                        <input type="text" name="name" style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9rem;">Телефон (для связи по заказам)</label>
+                        <input type="text" name="phone" style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; background: var(--c-heading); margin-top: 10px;">Создать профиль</button>
+                </form>
             </div>
-            <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Войти</button>
-        </form>
+        </div>
+
     </div>
+</main>
 
-    <div class="panel" style="flex: 1; min-width: 300px; max-width: 400px; background: rgba(102, 155, 188, 0.05);">
-        <h2 style="color: var(--c-heading); border-bottom: 2px solid var(--c-accent); padding-bottom: 10px;">Регистрация</h2>
+<script>
+    // Скрипт для раскрытия блоков
+    function toggleForm(formId, iconId) {
+        const form = document.getElementById(formId);
+        const icon = document.getElementById(iconId);
 
-        {% if request.query_params.error == 'email_exists' %}
-            <div style="color: var(--c-danger); margin-bottom: 15px; font-size: 0.9rem; font-weight: bold;">Такой email уже зарегистрирован.</div>
-        {% endif %}
+        // Закрываем обе формы перед открытием новой, чтобы экран не растягивался сильно
+        if (form.style.display === 'none') {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-icon').textContent = '▼';
+            document.getElementById('register-icon').textContent = '▼';
 
-        <form action="/register" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
-            <div>
-                <label style="font-weight: bold; font-size: 0.9rem;">Email *</label>
-                <input type="email" name="email" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
-            </div>
-            <div>
-                <label style="font-weight: bold; font-size: 0.9rem;">Пароль *</label>
-                <input type="password" name="password" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
-            </div>
-            <div>
-                <label style="font-weight: bold; font-size: 0.9rem;">Имя (как к вам обращаться)</label>
-                <input type="text" name="name" style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
-            </div>
-            <div>
-                <label style="font-weight: bold; font-size: 0.9rem;">Телефон (для связи по заказам)</label>
-                <input type="text" name="phone" style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
-            </div>
-            <button type="submit" class="btn" style="width: 100%; background: var(--c-heading); margin-top: 10px;">Создать профиль</button>
-        </form>
-    </div>
+            form.style.display = 'block';
+            icon.textContent = '▲';
+        } else {
+            form.style.display = 'none';
+            icon.textContent = '▼';
+        }
+    }
 
-</div>
+    // Если есть ошибка в URL, автоматически открываем нужный блок
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            if (urlParams.get('error') === 'wrong_credentials') {
+                toggleForm('login-form', 'login-icon');
+            } else if (urlParams.get('error') === 'email_exists') {
+                toggleForm('register-form', 'register-icon');
+            }
+        }
+    });
+</script>
 {% endblock %}

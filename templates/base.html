@@ -21,7 +21,7 @@
 
         <nav>
             <a href="/">Каталог</a>
-            <a href="/profile" style="font-weight: bold; color: var(--c-heading);">Личный кабинет</a>
+            <a href="/profile">Личный кабинет</a>
             <a href="/info">Оплата и доставка</a>
             <a href="/contacts">Контакты</a>
             <a href="/cart" style="font-weight: bold; color: var(--text-on-menu);">
@@ -34,33 +34,31 @@
     {% block content %}{% endblock %}
 
     {% block footer %}
-    <footer>
-        <div class="social-icons">
-            <a href="https://t.me/your_link" target="_blank" title="Telegram">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
+    <footer style="margin-top: 4rem; padding: 2rem; background: var(--c-surface); border-top: 1px solid var(--c-accent); text-align: center;">
+        <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 1.5rem;">
+            <a href="https://t.me/catburo" target="_blank" title="Мессенджер" style="display: inline-block;">
+                <div style="width: 45px; height: 45px; background-color: #669BBC; -webkit-mask: url('/static/images/tg.png') no-repeat center / contain; mask: url('/static/images/tg.png') no-repeat center / contain; opacity: 0.8; transition: 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'"></div>
             </a>
 
-            <a href="https://vk.com/your_link" target="_blank" title="ВКонтакте">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 6h16v12H4z" stroke="none"/> <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="14" fill="currentColor" stroke="none">VK</text>
-                </svg>
+            <a href="#" target="_blank" title="ВКонтакте" style="display: inline-block;">
+                <div style="width: 45px; height: 45px; background-color: #669BBC; -webkit-mask: url('/static/images/vk.png') no-repeat center / contain; mask: url('/static/images/vk.png') no-repeat center / contain; opacity: 0.8; transition: 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'"></div>
             </a>
 
-            <a href="https://instagram.com/your_link" target="_blank" title="Наше портфолио">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="4" y="4" width="16" height="16" rx="4" ry="4"></rect>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
+            <a href="https://www.instagram.com/cat.buro" target="_blank" title="Фотокарточка" style="display: inline-block;">
+                <div style="width: 45px; height: 45px; background-color: #669BBC; -webkit-mask: url('/static/images/inst.png') no-repeat center / contain; mask: url('/static/images/inst.png') no-repeat center / contain; opacity: 0.8; transition: 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'"></div>
             </a>
         </div>
 
-        <p>&copy; 2026 SeaOddity. Все права защищены.</p>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; font-size: 0.85rem; margin-bottom: 1rem;">
+            <a href="/offer" style="color: var(--text-on-menu); opacity: 0.8; text-decoration: none;">Публичная оферта</a>
+            <span style="opacity: 0.5;">|</span>
+            <a href="/privacy" style="color: var(--text-on-menu); opacity: 0.8; text-decoration: none;">Политика конфиденциальности</a>
+            <span style="opacity: 0.5;">|</span>
+            <a href="/terms" style="color: var(--text-on-menu); opacity: 0.8; text-decoration: none;">Пользовательское соглашение</a>
+        </div>
 
-        <div class="footer-links">
-            <a href="/terms">Пользовательское соглашение</a>
+        <div style="font-size: 0.8rem; opacity: 0.6; color: var(--text-on-menu);">
+            © 2026 Бюро Кошачье №2. Все права защищены.
         </div>
     </footer>
     {% endblock %}

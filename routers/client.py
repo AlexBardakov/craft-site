@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Request, Depends, Form, status, JSONResponse
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request, Depends, Form, status
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -49,6 +49,13 @@ async def read_contacts(request: Request):
 async def read_terms(request: Request):
     return templates.TemplateResponse("terms.html", {"request": request})
 
+@router.get("/privacy", response_class=HTMLResponse)
+async def read_privacy(request: Request):
+    return templates.TemplateResponse("privacy.html", {"request": request})
+
+@router.get("/offer", response_class=HTMLResponse)
+async def read_offer(request: Request):
+    return templates.TemplateResponse("offer.html", {"request": request})
 
 @router.get("/product/{product_id}", response_class=HTMLResponse)
 async def read_product(request: Request, product_id: int,

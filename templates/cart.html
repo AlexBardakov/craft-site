@@ -7,24 +7,44 @@
     <h1 class="page-title">Ваша корзина</h1>
     
     <div class="content-block" id="cart-container">
-        </div>
+    </div>
 
     <div class="content-block" id="order-form-container" style="display: none;">
         <h2>Оформление заказа</h2>
         <form action="/order" method="POST" id="order-form">
             <input type="hidden" name="cart_data" id="cart_data_input">
-            
+
             <div class="form-group">
-                <label>Ваш Telegram или номер телефона:</label>
-                <input type="text" name="contact" id="contact" placeholder="Telegram, VK или Email" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); font-size: 1rem; box-sizing: border-box;"
+                <label>Ваш адрес электронной почты, ссылка вконтакте или номер телефона:</label>
+                <input type="text" name="contact" id="contact" placeholder="Ссылка, номер телефона (для прочих мессенджеров) или адрес электронной почты" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); font-size: 1rem; box-sizing: border-box;"
                 value="{{ user.phone if user and user.phone else (user.email if user else '') }}">
             </div>
-            
+
+            <div class="form-group" style="background: rgba(102, 155, 188, 0.05); padding: 15px; border-radius: var(--radius-organic-alt); border: 1px solid var(--c-accent);">
+                <label style="font-weight: bold; margin-bottom: 10px; display: block;">Способ доставки:</label>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="delivery_method" value="Почта России" checked onchange="triggerCalculate()"> Почта России (по РФ)
+                    </label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="delivery_method" value="СДЭК" onchange="triggerCalculate()"> СДЭК (до ПВЗ)
+                    </label>
+                </div>
+
+                <label>Адрес (Город, индекс, улица, дом или адрес ПВЗ):</label>
+                <input type="text" name="delivery_address" id="city-input" required placeholder="Например: г. Москва, ул. Ленина..."
+                style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;"
+                oninput="debounceCalculate()">
+                <div style="margin-top: 10px; font-size: 0.85rem; color: var(--c-text); opacity: 0.8; font-style: italic; line-height: 1.4;">
+                    * Указанная стоимость доставки является ориентировочной. Точная сумма будет рассчитана и согласована с вами при подтверждении заказа.
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>Комментарий (пожелания к заказу):</label>
                 <textarea name="comment" placeholder="Например: профиль кейкапа или особенности покраски..."></textarea>
             </div>
-            
+
             <button type="submit" class="btn-buy" style="width: 100%;">Отправить заказ</button>
         </form>
     </div>
@@ -35,12 +55,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartContainer = document.getElementById('cart-container');
     const orderFormContainer = document.getElementById('order-form-container');
     const cartDataInput = document.getElementById('cart_data_input');
-    
+
     let cart = JSON.parse(localStorage.getItem('bureau_cart')) || [];
+
+    // Инициализируем переменные ДО вызова функций
+    let currentDeliveryCost = 350;
+    let debounceTimer;
 
     function renderCart() {
         if (cart.length === 0) {
-            cartContainer.innerHTML = "<p style='text-align: center;'>Ваша корзина пуста. Загляните в <a href='/' style='color: var(--text-on-menu);'>каталог</a>!</p>";
+            cartContainer.innerHTML = "<p style='text-align: center;'>Ваша корзина пуста. Загляните в <a href='/#catalog' style='color: var(--text-on-menu);'>каталог</a>!</p>";
             orderFormContainer.style.display = "none";
             return;
         }
@@ -69,21 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             `;
         });
-        
-        html += `</table><h3 style="text-align: right; color: var(--text-on-menu);">Итого: ${total} ₽</h3>`;
+
+        // Выводим разбивку по стоимости
+        html += `</table><h3 style="text-align: right; color: var(--text-on-menu); line-height: 1.5;">Товары: ${total} ₽<br>Доставка: ${currentDeliveryCost} ₽<br>Итого: ${total + currentDeliveryCost} ₽</h3>`;
         cartContainer.innerHTML = html;
-        
-        // Показываем форму и записываем в нее данные корзины
+
         orderFormContainer.style.display = "block";
         cartDataInput.value = JSON.stringify(cart);
     }
 
-    // Функции управления корзиной (делаем их глобальными)
     window.changeQty = function(index, delta) {
         cart[index].quantity += delta;
-        if (cart[index].quantity <= 0) {
-            cart.splice(index, 1);
-        }
+        if (cart[index].quantity <= 0) cart.splice(index, 1);
         updateAndRender();
     }
 
@@ -94,15 +115,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateAndRender() {
         localStorage.setItem('bureau_cart', JSON.stringify(cart));
-        updateCartCount();
+        // Защита от ошибки, если функции счетчика нет на странице
+        if (typeof updateCartCount === 'function') updateCartCount();
         renderCart();
     }
 
-    // Очищаем корзину после успешной отправки формы
+    window.debounceCalculate = function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(fetchDeliveryCost, 800);
+    }
+
+    window.triggerCalculate = function() {
+        fetchDeliveryCost();
+    }
+
+    async function fetchDeliveryCost() {
+        const cityInput = document.getElementById('city-input');
+        const methodInput = document.querySelector('input[name="delivery_method"]:checked');
+
+        if (!cityInput || !methodInput) return;
+
+        const formData = new FormData();
+        formData.append('city', cityInput.value);
+        formData.append('method', methodInput.value);
+
+        try {
+            const response = await fetch('/api/calculate-delivery', { method: 'POST', body: formData });
+            const data = await response.json();
+            currentDeliveryCost = data.cost;
+            updateAndRender(); // Перерисовываем с новой ценой
+        } catch (e) {
+            console.error("Ошибка сети при расчете доставки", e);
+        }
+    }
+
     document.getElementById('order-form').addEventListener('submit', () => {
         localStorage.removeItem('bureau_cart');
     });
 
+    // Запускаем отрисовку корзины при загрузке страницы
     renderCart();
 });
 </script>

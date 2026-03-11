@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 import httpx
 from dotenv import load_dotenv
 from routers.customer import get_current_user
+from delivery_service import calculate_delivery_cost
 
 import models
 from database import get_db
@@ -61,6 +62,11 @@ async def process_order(
 
         items_text += f"{prefix} {title} (x{qty}) - {item_total} ₽\n"
 
+    # 2.5 Считаем доставку (обращается к нашему сервису)
+    delivery_cost = await calculate_delivery_cost(delivery_address,
+                                                  delivery_method)
+    total_price += delivery_cost  # Прибавляем доставку к общей сумме
+
     # 3. Сохраняем заказ в НАШУ БАЗУ ДАННЫХ (в новые таблицы Order)
     new_order = models.Order(
         customer_id=user.id if user else None,
@@ -68,7 +74,12 @@ async def process_order(
         customer_name=user.name if user else "",
         total_price=total_price,
         comment=comment,
-        status="Новый"
+        status="Новый",
+
+        # ДОБАВЛЯЕМ ДАННЫЕ ДОСТАВКИ В БАЗУ
+        delivery_method=delivery_method,
+        delivery_cost=delivery_cost,
+        delivery_address=delivery_address
     )
     db.add(new_order)
     db.commit()
@@ -90,6 +101,8 @@ async def process_order(
         message_text = (
             f"🚀 <b>НОВЫЙ ЗАКАЗ #{new_order.id} С САЙТА!</b>\n\n"
             f"📦 <b>Состав заказа:</b>\n{items_text}\n"
+            f"👤 <b>Способ доставки:</b> {delivery_method}\n"
+            f"👤 <b>Адрес доставки:</b> {delivery_address}\n"
             f"💰 <b>Итоговая сумма:</b> {total_price} ₽\n\n"
             f"👤 <b>Контакт:</b> {contact}\n"
         )

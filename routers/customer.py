@@ -6,8 +6,8 @@ from jose import jwt, JWTError
 
 import models
 from database import get_db
-from security import get_password_hash, verify_password, create_access_token, \
-    SECRET_KEY, ALGORITHM
+from security import get_password_hash, verify_password, create_access_token, SECRET_KEY, ALGORITHM, create_reset_token, verify_reset_token
+from email_service import send_reset_email
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -112,3 +112,60 @@ async def profile_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("profile.html",
                                       {"request": request, "user": user,
                                        "orders": user_orders})
+
+
+# --- ВОССТАНОВЛЕНИЕ ПАРОЛЯ ---
+
+@router.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request):
+    return templates.TemplateResponse("forgot_password.html",
+                                      {"request": request})
+
+
+@router.post("/forgot-password")
+async def forgot_password_process(request: Request, email: str = Form(...),
+                                  db: Session = Depends(get_db)):
+    user = db.query(models.Customer).filter(
+        models.Customer.email == email).first()
+
+    if user:
+        token = create_reset_token(email)
+        # Формируем полную ссылку на основе текущего адреса сайта
+        base_url = str(request.base_url).rstrip("/")
+        reset_link = f"{base_url}/reset-password?token={token}"
+        send_reset_email(email, reset_link)
+
+    # Мы всегда возвращаем успешное сообщение, даже если email нет в базе.
+    # Это защита от злоумышленников (чтобы они не могли проверить, кто зарегистрирован)
+    return templates.TemplateResponse("forgot_password.html",
+                                      {"request": request, "message": True})
+
+
+@router.get("/reset-password", response_class=HTMLResponse)
+async def reset_password_page(request: Request, token: str):
+    email = verify_reset_token(token)
+    if not email:
+        return HTMLResponse(
+            "<h2 style='text-align:center; padding: 2rem;'>Ссылка недействительна или устарела.</h2>",
+            status_code=400)
+    return templates.TemplateResponse("reset_password.html",
+                                      {"request": request, "token": token})
+
+
+@router.post("/reset-password")
+async def reset_password_process(token: str = Form(...),
+                                 password: str = Form(...),
+                                 db: Session = Depends(get_db)):
+    email = verify_reset_token(token)
+    if not email:
+        return RedirectResponse(url="/login?error=invalid_token",
+                                status_code=303)
+
+    user = db.query(models.Customer).filter(
+        models.Customer.email == email).first()
+    if user:
+        user.password_hash = get_password_hash(password)
+        db.commit()
+
+    return RedirectResponse(url="/login?message=password_changed",
+                            status_code=303)
