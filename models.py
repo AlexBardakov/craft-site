@@ -54,12 +54,19 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
     customer_contact = Column(String)
     customer_name = Column(String, default="")
     status = Column(String, default="Новый")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     total_price = Column(Integer, default=0)
     comment = Column(Text, default="")
+
+    # --- НОВЫЕ ПОЛЯ ДЛЯ ЮKASSA ---
+    payment_id = Column(String, nullable=True,
+                        index=True)  # Уникальный ID платежа на стороне ЮKassa
+    payment_url = Column(String, nullable=True)  # Ссылка на оплату (СБП)
+    is_paid = Column(Boolean, default=False)  # Флаг успешной оплаты
 
     items = relationship("OrderItem", backref="order")
 
@@ -83,3 +90,15 @@ class OrderItem(Base):
     product = relationship("Product")
     # Добавляем связь с вариацией
     variant = relationship("ProductVariant")
+
+class Customer(Base):
+    __tablename__ = "customers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String)  # Пароли будем хранить в зашифрованном виде
+    name = Column(String, default="")
+    phone = Column(String, default="")
+
+    # Связь: у одного клиента может быть много заказов
+    orders = relationship("Order", backref="customer")

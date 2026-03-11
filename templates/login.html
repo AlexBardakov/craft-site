@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Вход и Регистрация | Бюро Кошачье{% endblock %}
+
+{% block content %}
+<div class="login-container" style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; margin-top: 2rem;">
+
+    <div class="panel" style="flex: 1; min-width: 300px; max-width: 400px;">
+        <h2 style="color: var(--c-heading); border-bottom: 2px solid var(--c-accent); padding-bottom: 10px;">Вход</h2>
+
+        {% if request.query_params.error == 'wrong_credentials' %}
+            <div style="color: var(--c-danger); margin-bottom: 15px; font-size: 0.9rem; font-weight: bold;">Неверный email или пароль.</div>
+        {% endif %}
+
+        <form action="/login" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <div>
+                <label style="font-weight: bold; font-size: 0.9rem;">Email</label>
+                <input type="email" name="email" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="font-weight: bold; font-size: 0.9rem;">Пароль</label>
+                <input type="password" name="password" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+            </div>
+            <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Войти</button>
+        </form>
+    </div>
+
+    <div class="panel" style="flex: 1; min-width: 300px; max-width: 400px; background: rgba(102, 155, 188, 0.05);">
+        <h2 style="color: var(--c-heading); border-bottom: 2px solid var(--c-accent); padding-bottom: 10px;">Регистрация</h2>
+
+        {% if request.query_params.error == 'email_exists' %}
+            <div style="color: var(--c-danger); margin-bottom: 15px; font-size: 0.9rem; font-weight: bold;">Такой email уже зарегистрирован.</div>
+        {% endif %}
+
+        <form action="/register" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <div>
+                <label style="font-weight: bold; font-size: 0.9rem;">Email *</label>
+                <input type="email" name="email" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="font-weight: bold; font-size: 0.9rem;">Пароль *</label>
+                <input type="password" name="password" required style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="font-weight: bold; font-size: 0.9rem;">Имя (как к вам обращаться)</label>
+                <input type="text" name="name" style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="font-weight: bold; font-size: 0.9rem;">Телефон (для связи по заказам)</label>
+                <input type="text" name="phone" style="width: 100%; padding: 10px; border: 1px solid var(--c-accent); border-radius: var(--radius-organic-alt); box-sizing: border-box;">
+            </div>
+            <button type="submit" class="btn" style="width: 100%; background: var(--c-heading); margin-top: 10px;">Создать профиль</button>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

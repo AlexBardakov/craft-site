@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+from payment_service import create_sbp_payment
 
 import models
 from database import get_db
@@ -403,6 +404,37 @@ async def edit_product_variant(
 
     return RedirectResponse(url=f"/admin/edit/{product_id}", status_code=303)
 
+@router.post("/admin/order/{order_id}/update_price")
+async def update_order_price(
+        order_id: int,
+        new_price: int = Form(...),
+        page: int = Form(1),
+        db: Session = Depends(get_db),
+        admin: str = Depends(get_current_admin)
+):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    # Разрешаем менять цену только если заказ еще не оплачен
+    if order and not order.is_paid:
+        order.total_price = new_price
+        db.commit()
+    return RedirectResponse(url=f"/admin?page={page}&tab=orders", status_code=303)
+
+
+@router.post("/admin/order/{order_id}/mark_paid")
+async def mark_order_paid(
+        order_id: int,
+        page: int = Form(1),
+        db: Session = Depends(get_db),
+        admin: str = Depends(get_current_admin)
+):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if order:
+        order.is_paid = True
+        # Логично сразу перевести заказ на следующий этап
+        if order.status == "Новый":
+            order.status = "В очереди"
+        db.commit()
+    return RedirectResponse(url=f"/admin?page={page}&tab=orders", status_code=303)
 
 # --- ЭКСПОРТ В EXCEL / CSV ---
 @router.get("/admin/export/orders")
@@ -456,3 +488,44 @@ async def export_orders(db: Session = Depends(get_db),
         headers={
             "Content-Disposition": 'attachment; filename="buro_orders_export.csv"'}
     )
+
+
+@router.post("/admin/order/{order_id}/invoice")
+async def generate_invoice(
+        order_id: int,
+        db: Session = Depends(get_db),
+        admin: str = Depends(get_current_admin)
+):
+    # Ищем заказ в базе
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        return RedirectResponse(url="/admin?tab=orders", status_code=303)
+
+    # Защита от случайного повторного выставления счета
+    if order.payment_url or order.is_paid:
+        return RedirectResponse(url="/admin?tab=orders", status_code=303)
+
+    # Важно: используем правильное название проекта для чека
+    description = f"Оплата заказа #{order.id} (Сайт Сыроварни)"
+
+    try:
+        # Обращаемся к нашему сервису ЮKassa
+        payment_id, payment_url = create_sbp_payment(
+            order_id=order.id,
+            amount=order.total_price,
+            description=description
+        )
+
+        # Сохраняем данные платежа в заказ
+        order.payment_id = payment_id
+        order.payment_url = payment_url
+        order.status = "Ожидает оплаты"  # Автоматически меняем статус
+        db.commit()
+
+    except Exception as e:
+        print(f"Ошибка при выставлении счета ЮKassa: {e}")
+        # В реальном проекте тут лучше выводить уведомление об ошибке,
+        # но пока просто логируем в консоль сервера
+
+    # Возвращаем администратора обратно на вкладку заказов
+    return RedirectResponse(url="/admin?tab=orders", status_code=303)

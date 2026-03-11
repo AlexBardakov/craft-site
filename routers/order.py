@@ -1,6 +1,6 @@
 import os
 import json
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 import httpx
@@ -101,3 +101,36 @@ async def process_order(
                 print(f"Ошибка при отправке: {e}")
 
     return RedirectResponse(url="/success", status_code=303)
+
+
+@router.post("/webhook/yookassa")
+async def yookassa_webhook(request: Request, db: Session = Depends(get_db)):
+    try:
+        # Получаем JSON с данными от ЮKassa
+        payload = await request.json()
+
+        # Проверяем, что это событие успешной оплаты
+        if payload.get("event") == "payment.succeeded":
+            object_data = payload.get("object", {})
+            metadata = object_data.get("metadata", {})
+
+            # Достаем ID заказа, который мы передавали при выставлении счета
+            order_id = metadata.get("order_id")
+
+            if order_id:
+                order = db.query(models.Order).filter(
+                    models.Order.id == int(order_id)).first()
+                if order and not order.is_paid:
+                    # Помечаем как оплаченный
+                    order.is_paid = True
+                    # Автоматически двигаем статус дальше
+                    if order.status in ["Новый", "Ожидает оплаты"]:
+                        order.status = "В очереди"
+                    db.commit()
+
+        # ЮKassa требует всегда отвечать 200 OK, иначе она будет слать уведомления бесконечно
+        return Response(status_code=200)
+
+    except Exception as e:
+        print(f"Ошибка при обработке Webhook: {e}")
+        return Response(status_code=400)
