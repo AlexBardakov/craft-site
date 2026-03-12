@@ -9,6 +9,8 @@ from database import engine
 
 # Импортируем наши роутеры из папки routers
 from routers import client, admin, order
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
 
 load_dotenv()
 
@@ -16,6 +18,10 @@ load_dotenv()
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Сайт Бюро Кошачье")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("static/images/favicon.ico")
 
 # Подключаем папку со статикой (картинки, стили)
 app.mount("/static", StaticFiles(directory="static"), name="static")
